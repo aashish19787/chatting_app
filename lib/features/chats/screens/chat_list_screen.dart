@@ -1,8 +1,13 @@
+
+import 'dart:async';
 import 'package:flutter/material.dart';
+
 import '../../../models/chat_model.dart';
 import '../../../models/user_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
+import '../../../common/widgets/user_avatar.dart';
+
 import '../../contacts/screens/search_screen.dart';
 import '../../profile/screens/profile_screen.dart';
 import 'chat_screen.dart';
@@ -14,23 +19,83 @@ class ChatListScreen extends StatefulWidget {
   State<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-class _ChatListScreenState extends State<ChatListScreen> {
+// WidgetsBindingObserver lets us hear when the app goes to the
+// background or comes back to the foreground.
+class _ChatListScreenState extends State<ChatListScreen>
+    with WidgetsBindingObserver {
   final _firestoreService = FirestoreService();
   final _authService = FirebaseAuthService();
+
+  Timer? _heartbeat;
 
   @override
   void initState() {
     super.initState();
-    // Create a profile for accounts that don't have one yet.
+    WidgetsBinding.instance.addObserver(this);
+    _init();
+  }
+
+  Future<void> _init() async {
     final user = _authService.currentUser;
-    if (user != null) {
-      _firestoreService.ensureUserExists(user);
+    if (user == null) return;
+
+    // Create a profile for accounts that don't have one yet.
+    await _firestoreService.ensureUserExists(user);
+    _goOnline();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _heartbeat?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _goOnline();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _goOffline();
     }
   }
 
-  /// Today -> "14:05", older -> "03/11"
+  void _goOnline() {
+    final uid = _authService.currentUser?.uid;
+    if (uid == null) return;
+
+    _firestoreService.setOnlineStatus(uid, true);
+
+    // Refresh "last seen" every minute while the app is open.
+    _heartbeat?.cancel();
+    _heartbeat = Timer.periodic(const Duration(seconds: 60), (_) {
+      final id = _authService.currentUser?.uid;
+      if (id != null) {
+        _firestoreService.setOnlineStatus(id, true);
+      }
+    });
+  }
+
+  Future<void> _goOffline() async {
+    _heartbeat?.cancel();
+    final uid = _authService.currentUser?.uid;
+
+    if (uid != null) {
+      await _firestoreService.setOnlineStatus(uid, false);
+    }
+  }
+
+  Future<void> _logout() async {
+    // Must happen BEFORE signing out, because the write needs a login.
+    await _goOffline();
+    await _authService.logout();
+  }
+
+  // Today -> "14:05", older -> "03/11"
   String _formatTime(DateTime time) {
     final now = DateTime.now();
+
     final isToday = time.year == now.year &&
         time.month == now.month &&
         time.day == now.day;
@@ -40,8 +105,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
       final m = time.minute.toString().padLeft(2, '0');
       return '$h:$m';
     }
+
     final d = time.day.toString().padLeft(2, '0');
     final mo = time.month.toString().padLeft(2, '0');
+
     return '$d/$mo';
   }
 
@@ -52,8 +119,11 @@ class _ChatListScreenState extends State<ChatListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.chat_bubble_outline_rounded,
-                size: 56, color: Color(0xFF94A3B8)),
+            Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 56,
+              color: Color(0xFF94A3B8),
+            ),
             SizedBox(height: 16),
             Text(
               'No conversations yet',
@@ -67,7 +137,10 @@ class _ChatListScreenState extends State<ChatListScreen> {
             Text(
               'Tap the button below to find people and start chatting.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+              style: TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 14,
+              ),
             ),
           ],
         ),
@@ -94,18 +167,26 @@ class _ChatListScreenState extends State<ChatListScreen> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_rounded, color: Color(0xFF64748B)),
+            icon: const Icon(
+              Icons.person_rounded,
+              color: Color(0xFF64748B),
+            ),
             tooltip: 'My profile',
             onPressed: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                MaterialPageRoute(
+                  builder: (_) => const ProfileScreen(),
+                ),
               );
             },
           ),
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Color(0xFF64748B)),
+            icon: const Icon(
+              Icons.logout_rounded,
+              color: Color(0xFF64748B),
+            ),
             tooltip: 'Log out',
-            onPressed: () => _authService.logout(),
+            onPressed: _logout,
           ),
         ],
       ),
@@ -115,7 +196,9 @@ class _ChatListScreenState extends State<ChatListScreen> {
         tooltip: 'Find people',
         onPressed: () {
           Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const SearchScreen()),
+            MaterialPageRoute(
+              builder: (_) => const SearchScreen(),
+            ),
           );
         },
         child: const Icon(Icons.edit_rounded),
@@ -134,11 +217,14 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
           if (!snapshot.hasData) {
             return const Center(
-              child: CircularProgressIndicator(color: primaryColor),
+              child: CircularProgressIndicator(
+                color: primaryColor,
+              ),
             );
           }
 
           final chats = snapshot.data!;
+
           if (chats.isEmpty) return _buildEmpty();
 
           return ListView.separated(
@@ -147,6 +233,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
             separatorBuilder: (_, __) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final chat = chats[index];
+
               return _ChatTile(
                 chat: chat,
                 myUid: myUid,
@@ -162,7 +249,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
 }
 
 /// One row in the chat list. It loads the other person's profile live,
-/// so a name change shows up here automatically.
+/// so name changes, profile pictures and online status update automatically.
 class _ChatTile extends StatelessWidget {
   final ChatModel chat;
   final String myUid;
@@ -179,12 +266,16 @@ class _ChatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final otherUid = chat.otherUserId(myUid);
+    final unread = chat.unreadFor(myUid);
+    final hasUnread = unread > 0;
 
     return StreamBuilder<UserModel?>(
       stream: firestoreService.userStream(otherUid),
       builder: (context, snapshot) {
         final other = snapshot.data;
         final name = other?.name ?? 'Loading...';
+        final isOnline = other?.isActive ?? false;
+
         final preview = chat.lastSenderId == myUid
             ? 'You: ${chat.lastMessage}'
             : chat.lastMessage;
@@ -207,33 +298,45 @@ class _ChatTile extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(
+                  color: hasUnread
+                      ? const Color(0xFF6366F1)
+                      : const Color(0xFFE2E8F0),
+                ),
               ),
               child: Row(
                 children: [
-                  Container(
-                    height: 52,
-                    width: 52,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  // Profile picture with a green dot when online.
+                  Stack(
+                    children: [
+                      UserAvatar(
+                        name: name,
+                        photoBase64: other?.photoBase64 ?? '',
+                        size: 52,
                       ),
-                      borderRadius: BorderRadius.circular(17),
-                    ),
-                    child: Center(
-                      child: Text(
-                        name.isNotEmpty ? name[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+
+                      if (isOnline)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            height: 14,
+                            width: 14,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF22C55E),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                    ],
                   ),
+
                   const SizedBox(width: 14),
+
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,21 +356,57 @@ class _ChatTile extends StatelessWidget {
                           preview,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF64748B),
+                            fontWeight: hasUnread
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: hasUnread
+                                ? const Color(0xFF172554)
+                                : const Color(0xFF64748B),
                           ),
                         ),
                       ],
                     ),
                   ),
+
                   const SizedBox(width: 10),
-                  Text(
-                    timeText,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF94A3B8),
-                    ),
+
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        timeText,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: hasUnread
+                              ? const Color(0xFF6366F1)
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
+
+                      if (hasUnread) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF6366F1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            unread > 99 ? '99+' : '$unread',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),

@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/chat_model.dart';
@@ -25,7 +26,9 @@ class FirestoreService {
   /// Read one user's profile once (null if it doesn't exist).
   Future<UserModel?> getUser(String uid) async {
     final doc = await _users.doc(uid).get();
+
     if (!doc.exists || doc.data() == null) return null;
+
     return UserModel.fromMap(doc.data()!);
   }
 
@@ -37,9 +40,32 @@ class FirestoreService {
     });
   }
 
+  /// Save the profile picture (as base64 text).
+  Future<void> updatePhoto(String uid, String photoBase64) async {
+    await _users.doc(uid).update({
+      'photoBase64': photoBase64,
+    });
+  }
+
+  /// Set online/offline and refresh the last seen time.
+  Future<void> setOnlineStatus(String uid, bool isOnline) async {
+    try {
+      await _users.doc(uid).update({
+        'isOnline': isOnline,
+        'lastSeen': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // Not critical. Ignore (for example, when offline).
+    }
+  }
+
   /// Find users whose name STARTS WITH the search text.
-  Future<List<UserModel>> searchUsers(String query, String currentUid) async {
+  Future<List<UserModel>> searchUsers(
+      String query,
+      String currentUid,
+      ) async {
     final text = query.trim().toLowerCase();
+
     if (text.isEmpty) return [];
 
     final snapshot = await _users
@@ -57,10 +83,13 @@ class FirestoreService {
   /// Make sure a profile exists for this logged-in user.
   Future<void> ensureUserExists(User authUser) async {
     final doc = await _users.doc(authUser.uid).get();
+
     if (doc.exists) return;
 
     final email = authUser.email ?? '';
-    final name = email.contains('@') ? email.split('@').first : 'User';
+    final name = email.contains('@')
+        ? email.split('@').first
+        : 'User';
 
     await saveUser(
       UserModel(
@@ -77,6 +106,7 @@ class FirestoreService {
   Stream<UserModel?> userStream(String uid) {
     return _users.doc(uid).snapshots().map((doc) {
       if (!doc.exists || doc.data() == null) return null;
+
       return UserModel.fromMap(doc.data()!);
     });
   }
@@ -89,37 +119,50 @@ class FirestoreService {
   /// no matter who starts the conversation.
   String getChatId(String uidA, String uidB) {
     final ids = [uidA, uidB]..sort();
+
     return ids.join('_');
   }
 
-  /// Send a message. Creates the chat on the first message.
+  /// Send a text or image message.
+  /// Creates the chat on the first message.
   Future<void> sendMessage({
     required String senderId,
     required String receiverId,
-    required String text,
+    String text = '',
+    String imageUrl = '',
   }) async {
     final chatId = getChatId(senderId, receiverId);
     final chatRef = _chats.doc(chatId);
-
-    // Sorted, so the list is identical no matter who sends first.
     final participants = [senderId, receiverId]..sort();
 
-    // 1. Create or update the chat summary (used by the chat list).
+    // 1. Update the chat summary.
     await chatRef.set({
       'participants': participants,
-      'lastMessage': text,
+
+      // The chat list displays this as the preview.
+      'lastMessage': imageUrl.isNotEmpty ? '📷 Photo' : text,
+
       'lastMessageTime': FieldValue.serverTimestamp(),
       'lastSenderId': senderId,
+
+      // Increase receiver's unread count.
+      // Reset sender's unread count.
+      'unreadCount': {
+        receiverId: FieldValue.increment(1),
+        senderId: 0,
+      },
     }, SetOptions(merge: true));
 
-    // 2. Add the message itself. Our rules check the chat exists first,
-    //    which is why step 1 happens before step 2.
+    // 2. Create the message.
     final message = MessageModel(
       id: '',
       senderId: senderId,
       text: text,
+      imageUrl: imageUrl,
       createdAt: DateTime.now(),
     );
+
+    // 3. Save the message inside the chat.
     await chatRef.collection('messages').add(message.toMap());
   }
 
@@ -130,9 +173,16 @@ class FirestoreService {
         .collection('messages')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-        .map((doc) => MessageModel.fromMap(doc.id, doc.data()))
-        .toList());
+        .map(
+          (snapshot) => snapshot.docs
+          .map(
+            (doc) => MessageModel.fromMap(
+          doc.id,
+          doc.data(),
+        ),
+      )
+          .toList(),
+    );
   }
 
   /// Live list of all chats you are part of, newest first.
@@ -142,13 +192,49 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) {
       final chats = snapshot.docs
-          .map((doc) => ChatModel.fromMap(doc.id, doc.data()))
+          .map(
+            (doc) => ChatModel.fromMap(
+          doc.id,
+          doc.data(),
+        ),
+      )
           .toList();
 
-      // Sorted here instead of in the query, so we don't need to
-      // create a Firestore index.
-      chats.sort((a, b) => b.lastMessageTime.compareTo(a.lastMessageTime));
+      // Sort locally to avoid requiring a Firestore index.
+      chats.sort(
+            (a, b) => b.lastMessageTime.compareTo(
+          a.lastMessageTime,
+        ),
+      );
+
       return chats;
     });
+  }
+
+  /// Live updates of one chat document (used for read receipts).
+  Stream<ChatModel?> chatStream(String chatId) {
+    return _chats.doc(chatId).snapshots().map((doc) {
+      if (!doc.exists || doc.data() == null) return null;
+
+      return ChatModel.fromMap(doc.id, doc.data()!);
+    });
+  }
+
+  /// Mark a chat as read by me.
+  /// Reset my unread counter and record the time,
+  /// so the other person sees "seen".
+  Future<void> markChatAsRead(
+      String chatId,
+      String myUid,
+      ) async {
+    try {
+      await _chats.doc(chatId).update({
+        'unreadCount.$myUid': 0,
+        'lastRead.$myUid': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      // The chat may not exist yet (nothing to mark).
+      // Safe to ignore.
+    }
   }
 }

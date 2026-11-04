@@ -4,6 +4,7 @@ class MessageModel {
   final String id;
   final String senderId;
   final String text;
+  final String imageUrl; // empty = text-only message
   final DateTime createdAt;
 
   MessageModel({
@@ -11,14 +12,16 @@ class MessageModel {
     required this.senderId,
     required this.text,
     required this.createdAt,
+    this.imageUrl = '',
   });
 
-  /// Used when sending. The server writes the time, so every device
-  /// agrees on the order even if phone clocks are wrong.
+  bool get hasImage => imageUrl.isNotEmpty;
+
   Map<String, dynamic> toMap() {
     return {
       'senderId': senderId,
       'text': text,
+      'imageUrl': imageUrl,
       'createdAt': FieldValue.serverTimestamp(),
     };
   }
@@ -28,8 +31,7 @@ class MessageModel {
       id: id,
       senderId: map['senderId'] ?? '',
       text: map['text'] ?? '',
-      // createdAt is briefly null on your own device while the server
-      // timestamp is still being confirmed, so we fall back to now.
+      imageUrl: map['imageUrl'] ?? '',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
     );
   }

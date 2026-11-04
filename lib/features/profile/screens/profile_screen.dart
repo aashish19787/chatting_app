@@ -1,7 +1,12 @@
+
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
+
 import '../../../models/user_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
+import '../../../common/widgets/user_avatar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,8 +23,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _firestoreService = FirestoreService();
 
   UserModel? _profile;
-  bool _isLoading = true; // loading the profile
-  bool _isSaving = false; // saving changes
+
+  bool _isLoading = true;
+  bool _isSaving = false;
+  bool _isUploadingPhoto = false;
+
+  String _photoBase64 = '';
 
   @override
   void initState() {
@@ -35,19 +44,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _loadProfile() async {
     final uid = _authService.currentUser?.uid;
-    if (uid == null) return;
+    if (uid == null) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
 
     try {
       final profile = await _firestoreService.getUser(uid);
+
       if (!mounted) return;
 
       setState(() {
         _profile = profile;
+        _photoBase64 = profile?.photoBase64 ?? '';
         _nameController.text = profile?.name ?? '';
         _isLoading = false;
       });
     } catch (_) {
       if (!mounted) return;
+
       setState(() => _isLoading = false);
       _showMessage('Could not load your profile.', isError: true);
     }
@@ -66,13 +83,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
         uid,
         _nameController.text.trim(),
       );
+
       if (!mounted) return;
+
+      setState(() {
+        if (_profile != null) {
+          _profile = _profile!.copyWith(
+            name: _nameController.text.trim(),
+          );
+        }
+      });
+
       _showMessage('Profile updated!');
     } catch (_) {
       if (!mounted) return;
       _showMessage('Could not update your profile.', isError: true);
     } finally {
-      if (mounted) setState(() => _isSaving = false);
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  Future<void> _pickPhoto() async {
+    final uid = _authService.currentUser?.uid;
+    if (uid == null) return;
+
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 256,
+        maxHeight: 256,
+        imageQuality: 60,
+      );
+
+      if (picked == null) return;
+
+      if (!mounted) return;
+      setState(() => _isUploadingPhoto = true);
+
+      final bytes = await picked.readAsBytes();
+      final encoded = base64Encode(bytes);
+
+      await _firestoreService.updatePhoto(uid, encoded);
+
+      if (!mounted) return;
+
+      setState(() => _photoBase64 = encoded);
+      _showMessage('Profile picture updated!');
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage('Could not update your picture.', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
     }
   }
 
@@ -91,7 +156,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: const Color(0xFF64748B)),
+      prefixIcon: Icon(
+        icon,
+        color: const Color(0xFF64748B),
+      ),
       filled: true,
       fillColor: const Color(0xFFF8FAFC),
       border: OutlineInputBorder(
@@ -100,11 +168,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderSide: const BorderSide(
+          color: Color(0xFFE2E8F0),
+        ),
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderSide: const BorderSide(
+          color: Color(0xFFE2E8F0),
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -138,7 +210,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF172554)),
+        iconTheme: const IconThemeData(
+          color: Color(0xFF172554),
+        ),
         title: const Text(
           'My Profile',
           style: TextStyle(
@@ -149,7 +223,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: _isLoading
           ? const Center(
-        child: CircularProgressIndicator(color: primaryColor),
+        child: CircularProgressIndicator(
+          color: primaryColor,
+        ),
       )
           : SafeArea(
         child: SingleChildScrollView(
@@ -162,44 +238,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Avatar with the first letter of the name
+                // Profile picture (tap to change)
                 Center(
-                  child: Container(
-                    height: 100,
-                    width: 100,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [primaryColor, secondaryColor],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(32),
-                      boxShadow: [
-                        BoxShadow(
-                          color: primaryColor.withOpacity(0.3),
-                          blurRadius: 22,
-                          offset: const Offset(0, 9),
+                  child: GestureDetector(
+                    onTap: _isUploadingPhoto ? null : _pickPhoto,
+                    child: Stack(
+                      children: [
+                        UserAvatar(
+                          name: _profile?.name ?? '',
+                          photoBase64: _photoBase64,
+                          size: 100,
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: primaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 2,
+                              ),
+                            ),
+                            child: _isUploadingPhoto
+                                ? const SizedBox(
+                              height: 16,
+                              width: 16,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                                : const Icon(
+                              Icons.camera_alt_rounded,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        (_profile?.name.isNotEmpty ?? false)
-                            ? _profile!.name[0].toUpperCase()
-                            : '?',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 44,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 35),
 
-                // Name (editable)
                 const Text(
                   'Full Name',
                   style: TextStyle(
@@ -209,6 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 9),
+
                 TextFormField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
@@ -220,16 +306,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     if (value == null || value.trim().isEmpty) {
                       return 'Please enter your name';
                     }
+
                     if (value.trim().length < 2) {
                       return 'Name must be at least 2 characters';
                     }
+
                     return null;
                   },
                 ),
 
                 const SizedBox(height: 22),
 
-                // Email (read-only)
                 const Text(
                   'Email Address',
                   style: TextStyle(
@@ -239,6 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const SizedBox(height: 9),
+
                 TextFormField(
                   initialValue: _profile?.email ?? '',
                   enabled: false,
@@ -250,7 +338,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 30),
 
-                // Save button
                 SizedBox(
                   height: 56,
                   child: DecoratedBox(
