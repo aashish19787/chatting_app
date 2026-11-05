@@ -8,6 +8,10 @@ plugins {
 }
 
 android {
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+        // keep your existing sourceCompatibility / targetCompatibility lines
+    }
     namespace = "com.example.chatting_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
@@ -49,4 +53,8 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

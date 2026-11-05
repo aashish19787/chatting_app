@@ -61,6 +61,17 @@ class FirebaseAuthService {
     await _auth.signOut();
   }
 
+  /// Send a password reset email.
+  Future<void> sendPasswordReset(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (e) {
+      throw AuthFailure(_friendlyMessage(e));
+    } catch (_) {
+      throw AuthFailure('Something went wrong. Please try again.');
+    }
+  }
+
   /// Turn Firebase's technical error codes into messages a user understands.
   String _friendlyMessage(FirebaseAuthException e) {
     switch (e.code) {

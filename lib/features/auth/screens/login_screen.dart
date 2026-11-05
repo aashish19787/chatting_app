@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import '../../../services/firebase_auth_service.dart';
 import 'register_screen.dart';
@@ -52,6 +53,41 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
       }
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    final email = _emailController.text.trim();
+
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter your email above first.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    try {
+      await _authService.sendPasswordReset(email);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('If an account exists, a reset link was sent.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } on AuthFailure catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
     }
   }
 
@@ -243,6 +279,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       return null;
                     },
+                  ),
+
+                  // Forgot Password
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _resetPassword,
+                      child: const Text(
+                        'Forgot password?',
+                        style: TextStyle(
+                          color: primaryColor,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
                   ),
 
                   const SizedBox(height: 30),

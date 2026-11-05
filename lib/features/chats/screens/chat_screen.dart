@@ -8,6 +8,7 @@ import '../../../models/user_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
 import '../../../services/storage_service.dart';
+import '../../../services/notification_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final UserModel otherUser;
@@ -36,6 +37,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _myUid = _authService.currentUser!.uid;
     _chatId = _firestoreService.getChatId(_myUid, widget.otherUser.uid);
+    NotificationService.instance.activeChatId = _chatId;
 
     _statusTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) setState(() {});
@@ -46,6 +48,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _statusTimer?.cancel();
     _messageController.dispose();
+    if (NotificationService.instance.activeChatId == _chatId) {
+      NotificationService.instance.activeChatId = null;
+    }
     super.dispose();
   }
 

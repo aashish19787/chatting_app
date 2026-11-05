@@ -7,6 +7,7 @@ import '../../../models/user_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
 import '../../../common/widgets/user_avatar.dart';
+import '../../../services/notification_service.dart';
 
 import '../../contacts/screens/search_screen.dart';
 import '../../profile/screens/profile_screen.dart';
@@ -19,14 +20,16 @@ class ChatListScreen extends StatefulWidget {
   State<ChatListScreen> createState() => _ChatListScreenState();
 }
 
-// WidgetsBindingObserver lets us hear when the app goes to the
-// background or comes back to the foreground.
 class _ChatListScreenState extends State<ChatListScreen>
     with WidgetsBindingObserver {
   final _firestoreService = FirestoreService();
   final _authService = FirebaseAuthService();
 
   Timer? _heartbeat;
+
+  StreamSubscription<List<ChatModel>>? _chatSub;
+  final Map<String, DateTime> _knownTimes = {};
+  bool _firstChatEvent = true;
 
   @override
   void initState() {
@@ -39,15 +42,54 @@ class _ChatListScreenState extends State<ChatListScreen>
     final user = _authService.currentUser;
     if (user == null) return;
 
-    // Create a profile for accounts that don't have one yet.
     await _firestoreService.ensureUserExists(user);
+    await NotificationService.instance.init();
     _goOnline();
+    _listenForNewMessages(user.uid);
+  }
+
+  /// Shows a notification when another person sends a new message.
+  void _listenForNewMessages(String myUid) {
+    _chatSub = _firestoreService.chatsStream(myUid).listen((chats) async {
+      // The first batch is just the existing chats.
+      // Remember them, but don't notify about old messages.
+      if (_firstChatEvent) {
+        _firstChatEvent = false;
+
+        for (final chat in chats) {
+          _knownTimes[chat.id] = chat.lastMessageTime;
+        }
+
+        return;
+      }
+
+      for (final chat in chats) {
+        final previous = _knownTimes[chat.id];
+        _knownTimes[chat.id] = chat.lastMessageTime;
+
+        final isNew =
+            previous == null || chat.lastMessageTime.isAfter(previous);
+
+        if (!isNew) continue;
+        if (chat.lastSenderId == myUid) continue;
+        if (NotificationService.instance.activeChatId == chat.id) continue;
+
+        final sender = await _firestoreService.getUser(chat.lastSenderId);
+
+        await NotificationService.instance.showMessage(
+          chatId: chat.id,
+          title: sender?.name ?? 'New message',
+          body: chat.lastMessage,
+        );
+      }
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _heartbeat?.cancel();
+    _chatSub?.cancel();
     super.dispose();
   }
 
@@ -69,8 +111,10 @@ class _ChatListScreenState extends State<ChatListScreen>
 
     // Refresh "last seen" every minute while the app is open.
     _heartbeat?.cancel();
+
     _heartbeat = Timer.periodic(const Duration(seconds: 60), (_) {
       final id = _authService.currentUser?.uid;
+
       if (id != null) {
         _firestoreService.setOnlineStatus(id, true);
       }
@@ -79,6 +123,7 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   Future<void> _goOffline() async {
     _heartbeat?.cancel();
+
     final uid = _authService.currentUser?.uid;
 
     if (uid != null) {
@@ -103,6 +148,7 @@ class _ChatListScreenState extends State<ChatListScreen>
     if (isToday) {
       final h = time.hour.toString().padLeft(2, '0');
       final m = time.minute.toString().padLeft(2, '0');
+
       return '$h:$m';
     }
 
@@ -314,7 +360,6 @@ class _ChatTile extends StatelessWidget {
                         photoBase64: other?.photoBase64 ?? '',
                         size: 52,
                       ),
-
                       if (isOnline)
                         Positioned(
                           right: 0,
@@ -384,7 +429,6 @@ class _ChatTile extends StatelessWidget {
                               : const Color(0xFF94A3B8),
                         ),
                       ),
-
                       if (hasUnread) ...[
                         const SizedBox(height: 6),
                         Container(
