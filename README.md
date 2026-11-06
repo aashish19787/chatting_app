@@ -41,3 +41,8 @@ A real-time one-to-one chat app built with Flutter and Firebase.
 - Notifications do not reach a fully closed app (that needs Cloud Functions
   and Firebase's paid plan).
 - User search matches names that start with the typed text.
+## More features
+- Typing indicator
+- Reply to messages and delete your own messages
+- Dark mode (saved between launches)
+- Group chats: create a group, chat, see members, leave
