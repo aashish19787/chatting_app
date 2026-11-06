@@ -276,7 +276,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           return ListView.separated(
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 90),
             itemCount: chats.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
               final chat = chats[index];
 

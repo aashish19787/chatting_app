@@ -206,7 +206,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       );
                     },
-                    errorBuilder: (_, __, ___) => const SizedBox(
+                    errorBuilder: (_, _, _) => const SizedBox(
                       width: 240,
                       height: 120,
                       child: Center(
@@ -506,7 +506,7 @@ class _FullScreenImage extends StatelessWidget {
               if (progress == null) return child;
               return const CircularProgressIndicator(color: Colors.white);
             },
-            errorBuilder: (_, __, ___) => const Icon(
+            errorBuilder: (_, _, _) => const Icon(
               Icons.broken_image_outlined,
               color: Colors.white54,
               size: 48,
