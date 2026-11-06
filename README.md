@@ -46,3 +46,9 @@ A real-time one-to-one chat app built with Flutter and Firebase.
 - Reply to messages and delete your own messages
 - Dark mode (saved between launches)
 - Group chats: create a group, chat, see members, leave
+
+## More features
+- Typing indicator
+- Reply to messages and delete your own messages
+- Dark mode (saved between launches)
+- Group chats: create a group, chat, see members, leave
