@@ -1,3 +1,5 @@
+import 'group_info_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -561,34 +563,41 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             backgroundColor: cs.surface,
             elevation: 0,
             titleSpacing: 0,
-            title: Row(
-              children: [
-                _buildGroupAvatar(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (count != null)
+            title: InkWell(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => GroupInfoScreen(chatId: widget.chatId),
+                ),
+              ),
+              child: Row(
+                children: [
+                  _buildGroupAvatar(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          '$count members',
+                          title,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF94A3B8),
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                    ],
+                        if (count != null)
+                          Text(
+                            '$count members',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           body: chatSnapshot.hasError
