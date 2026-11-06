@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../models/user_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
@@ -76,10 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.redAccent,
-        ),
+        SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
       );
     } catch (_) {
       // Covers Firestore errors (for example, rules not published yet).
@@ -108,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       prefixIcon: Icon(icon, color: const Color(0xFF64748B)),
       suffixIcon: suffix,
       filled: true,
-      fillColor: const Color(0xFFF8FAFC),
+      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
@@ -119,10 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(
-          color: Color(0xFF6366F1),
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -132,10 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: Colors.redAccent),
       ),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 19,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 19),
     );
   }
 
@@ -145,14 +137,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
     const secondaryColor = Color(0xFF8B5CF6);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 25,
-              vertical: 30,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
             child: Form(
               key: _formKey,
               child: Column(
@@ -204,10 +192,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Text(
                     'Join us and start connecting with people.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF64748B),
-                    ),
+                    style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
                   ),
 
                   const SizedBox(height: 35),
@@ -270,9 +255,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         return 'Please enter your email';
                       }
 
-                      if (!RegExp(
-                        r'^[^@\s]+@[^@\s]+\.[^@\s]+$',
-                      ).hasMatch(value.trim())) {
+                      if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$')
+                          .hasMatch(value.trim())) {
                         return 'Please enter a valid email';
                       }
 
@@ -403,32 +387,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         child: _isLoading
                             ? const SizedBox(
-                          height: 23,
-                          width: 23,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
+                                height: 23,
+                                width: 23,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
                             : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Create Account',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Create Account',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
+                                ],
                               ),
-                            ),
-                            SizedBox(width: 10),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              color: Colors.white,
-                              size: 20,
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),
@@ -469,10 +453,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Text(
                     'By creating an account, you agree to our Terms & Privacy Policy.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Color(0xFF94A3B8),
-                    ),
+                    style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
                   ),
                 ],
               ),

@@ -39,10 +39,7 @@ class FirebaseAuthService {
   }
 
   /// Log in an existing user.
-  Future<User?> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<User?> login({required String email, required String password}) async {
     try {
       final credential = await _auth.signInWithEmailAndPassword(
         email: email.trim(),

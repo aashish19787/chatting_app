@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../../../common/widgets/user_avatar.dart';
 import '../../../models/chat_model.dart';
 import '../../../models/message_model.dart';
@@ -266,8 +268,18 @@ class _ChatScreenState extends State<ChatScreen> {
       return 'Yesterday';
     }
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
@@ -306,15 +318,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _openImage(String url) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => _FullScreenImage(url: url)),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => _FullScreenImage(url: url)));
   }
 
   /// The small quoted box shown inside a reply.
   Widget _buildReplyQuote(MessageModel m, bool isMe) {
-    final name =
-        m.replyToSenderId == _myUid ? 'You' : widget.otherUser.name;
+    final name = m.replyToSenderId == _myUid ? 'You' : widget.otherUser.name;
     final textColor = isMe ? Colors.white : const Color(0xFF172554);
 
     return Container(
@@ -325,10 +335,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ? Colors.white.withValues(alpha: 0.18)
             : const Color(0xFFF1F5F9),
         border: Border(
-          left: BorderSide(
-            color: isMe ? Colors.white : _primary,
-            width: 3,
-          ),
+          left: BorderSide(color: isMe ? Colors.white : _primary, width: 3),
         ),
       ),
       child: Column(
@@ -366,7 +373,8 @@ class _ChatScreenState extends State<ChatScreen> {
     final textColor = isMe ? Colors.white : const Color(0xFF172554);
     final showImage = message.hasImage && !message.deleted;
 
-    final isSeen = isMe &&
+    final isSeen =
+        isMe &&
         otherLastRead != null &&
         !message.createdAt.isAfter(otherLastRead);
 
@@ -489,8 +497,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       Icon(
                         isSeen ? Icons.done_all_rounded : Icons.done_rounded,
                         size: 14,
-                        color:
-                            isSeen ? const Color(0xFF7DD3FC) : Colors.white70,
+                        color: isSeen
+                            ? const Color(0xFF7DD3FC)
+                            : Colors.white70,
                       ),
                     ],
                   ],
@@ -553,11 +562,12 @@ class _ChatScreenState extends State<ChatScreen> {
     final other = widget.otherUser;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF172554)),
+        iconTheme: IconThemeData(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
         titleSpacing: 0,
         title: StreamBuilder<UserModel?>(
           stream: _firestoreService.userStream(other.uid),
@@ -567,7 +577,8 @@ class _ChatScreenState extends State<ChatScreen> {
             return StreamBuilder<ChatModel?>(
               stream: _firestoreService.chatStream(_chatId),
               builder: (context, chatSnapshot) {
-                final isTyping = chatSnapshot.data?.isTyping(other.uid) ?? false;
+                final isTyping =
+                    chatSnapshot.data?.isTyping(other.uid) ?? false;
 
                 return Row(
                   children: [
@@ -584,10 +595,10 @@ class _ChatScreenState extends State<ChatScreen> {
                           Text(
                             user.name,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF172554),
+                              color: Theme.of(context).colorScheme.onSurface,
                             ),
                           ),
                           Text(
@@ -595,13 +606,14 @@ class _ChatScreenState extends State<ChatScreen> {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 12,
-                              fontStyle:
-                                  isTyping ? FontStyle.italic : FontStyle.normal,
+                              fontStyle: isTyping
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
                               color: isTyping
                                   ? _primary
                                   : user.isActive
-                                      ? const Color(0xFF22C55E)
-                                      : const Color(0xFF94A3B8),
+                                  ? const Color(0xFF22C55E)
+                                  : const Color(0xFF94A3B8),
                             ),
                           ),
                         ],
@@ -655,10 +667,10 @@ class _ChatScreenState extends State<ChatScreen> {
                             const SizedBox(height: 16),
                             Text(
                               other.name,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF172554),
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
                             ),
                             const SizedBox(height: 6),
@@ -694,7 +706,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         // The list is newest-first, so the next item is the
                         // OLDER message.
                         final isLast = index == messages.length - 1;
-                        final showDay = isLast ||
+                        final showDay =
+                            isLast ||
                             !_isSameDay(
                               message.createdAt,
                               messages[index + 1].createdAt,
@@ -703,10 +716,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         if (!showDay) return bubble;
 
                         return Column(
-                          children: [
-                            _buildDayChip(message.createdAt),
-                            bubble,
-                          ],
+                          children: [_buildDayChip(message.createdAt), bubble],
                         );
                       },
                     );
@@ -747,7 +757,7 @@ class _ChatScreenState extends State<ChatScreen> {
             top: false,
             child: Container(
               padding: const EdgeInsets.fromLTRB(6, 8, 14, 10),
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.surface,
               child: Row(
                 children: [
                   IconButton(
@@ -764,7 +774,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       decoration: InputDecoration(
                         hintText: 'Type a message',
                         filled: true,
-                        fillColor: const Color(0xFFF8FAFC),
+                        fillColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 18,
                           vertical: 12,
@@ -775,8 +787,9 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
-                          borderSide:
-                              const BorderSide(color: Color(0xFFE2E8F0)),
+                          borderSide: const BorderSide(
+                            color: Color(0xFFE2E8F0),
+                          ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),

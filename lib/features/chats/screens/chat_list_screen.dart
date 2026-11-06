@@ -1,5 +1,7 @@
+import '../../../core/theme/theme_controller.dart';
 
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../models/chat_model.dart';
@@ -141,9 +143,8 @@ class _ChatListScreenState extends State<ChatListScreen>
   String _formatTime(DateTime time) {
     final now = DateTime.now();
 
-    final isToday = time.year == now.year &&
-        time.month == now.month &&
-        time.day == now.day;
+    final isToday =
+        time.year == now.year && time.month == now.month && time.day == now.day;
 
     if (isToday) {
       final h = time.hour.toString().padLeft(2, '0');
@@ -159,7 +160,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   }
 
   Widget _buildEmpty() {
-    return const Center(
+    return Center(
       child: Padding(
         padding: EdgeInsets.all(30),
         child: Column(
@@ -176,17 +177,14 @@ class _ChatListScreenState extends State<ChatListScreen>
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF172554),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             SizedBox(height: 8),
             Text(
               'Tap the button below to find people and start chatting.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
             ),
           ],
         ),
@@ -200,37 +198,38 @@ class _ChatListScreenState extends State<ChatListScreen>
     final myUid = _authService.currentUser?.uid ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Chats',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF172554),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(
-              Icons.person_rounded,
-              color: Color(0xFF64748B),
+            icon: Icon(
+              Theme.of(context).brightness == Brightness.dark
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: const Color(0xFF64748B),
             ),
+            tooltip: 'Dark mode',
+            onPressed: ThemeController.instance.toggle,
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_rounded, color: Color(0xFF64748B)),
             tooltip: 'My profile',
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
             },
           ),
           IconButton(
-            icon: const Icon(
-              Icons.logout_rounded,
-              color: Color(0xFF64748B),
-            ),
+            icon: const Icon(Icons.logout_rounded, color: Color(0xFF64748B)),
             tooltip: 'Log out',
             onPressed: _logout,
           ),
@@ -241,11 +240,8 @@ class _ChatListScreenState extends State<ChatListScreen>
         foregroundColor: Colors.white,
         tooltip: 'Find people',
         onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => const SearchScreen(),
-            ),
-          );
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => const SearchScreen()));
         },
         child: const Icon(Icons.edit_rounded),
       ),
@@ -263,9 +259,7 @@ class _ChatListScreenState extends State<ChatListScreen>
 
           if (!snapshot.hasData) {
             return const Center(
-              child: CircularProgressIndicator(
-                color: primaryColor,
-              ),
+              child: CircularProgressIndicator(color: primaryColor),
             );
           }
 
@@ -327,19 +321,19 @@ class _ChatTile extends StatelessWidget {
             : chat.lastMessage;
 
         return Material(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: other == null
                 ? null
                 : () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ChatScreen(otherUser: other),
-                ),
-              );
-            },
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChatScreen(otherUser: other),
+                      ),
+                    );
+                  },
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -370,10 +364,7 @@ class _ChatTile extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: const Color(0xFF22C55E),
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 2,
-                              ),
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
                           ),
                         ),
@@ -390,10 +381,10 @@ class _ChatTile extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF172554),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 3),

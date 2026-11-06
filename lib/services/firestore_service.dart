@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/chat_model.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
@@ -120,10 +121,7 @@ class FirestoreService {
       'lastMessage': imageUrl.isNotEmpty ? '📷 Photo' : text,
       'lastMessageTime': FieldValue.serverTimestamp(),
       'lastSenderId': senderId,
-      'unreadCount': {
-        receiverId: FieldValue.increment(1),
-        senderId: 0,
-      },
+      'unreadCount': {receiverId: FieldValue.increment(1), senderId: 0},
     }, SetOptions(merge: true));
 
     final message = MessageModel(
@@ -166,8 +164,9 @@ class FirestoreService {
   Future<void> setTyping(String chatId, String uid, bool typing) async {
     try {
       await _chats.doc(chatId).update({
-        'typingAt.$uid':
-            typing ? FieldValue.serverTimestamp() : FieldValue.delete(),
+        'typingAt.$uid': typing
+            ? FieldValue.serverTimestamp()
+            : FieldValue.delete(),
       });
     } catch (_) {
       // The chat may not exist yet. Safe to ignore.
@@ -180,16 +179,17 @@ class FirestoreService {
         .collection('messages')
         .orderBy('createdAt', descending: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => MessageModel.fromMap(doc.id, doc.data()))
-            .toList());
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => MessageModel.fromMap(doc.id, doc.data()))
+              .toList(),
+        );
   }
 
   Stream<List<ChatModel>> chatsStream(String uid) {
-    return _chats
-        .where('participants', arrayContains: uid)
-        .snapshots()
-        .map((snapshot) {
+    return _chats.where('participants', arrayContains: uid).snapshots().map((
+      snapshot,
+    ) {
       final chats = snapshot.docs
           .map((doc) => ChatModel.fromMap(doc.id, doc.data()))
           .toList();

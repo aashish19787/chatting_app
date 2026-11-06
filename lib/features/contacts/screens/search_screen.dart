@@ -1,5 +1,7 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
+
 import '../../../models/user_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
@@ -73,9 +75,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onUserTap(UserModel user) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => ChatScreen(otherUser: user)),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => ChatScreen(otherUser: user)));
   }
 
   Widget _buildBody() {
@@ -113,7 +114,7 @@ class _SearchScreenState extends State<SearchScreen> {
         final user = _results[index];
 
         return Material(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
@@ -155,10 +156,10 @@ class _SearchScreenState extends State<SearchScreen> {
                       children: [
                         Text(
                           user.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF172554),
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -189,16 +190,17 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFF),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Color(0xFF172554)),
-        title: const Text(
+        iconTheme: IconThemeData(
+          color: Theme.of(context).colorScheme.onSurface,
+        ),
+        title: Text(
           'Find People',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF172554),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ),
@@ -218,7 +220,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   color: Color(0xFF64748B),
                 ),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),

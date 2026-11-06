@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
+import 'core/theme/app_theme.dart';
+import 'core/theme/theme_controller.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/chats/screens/chat_list_screen.dart';
@@ -9,9 +12,8 @@ import 'services/firebase_auth_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await ThemeController.instance.load();
 
   runApp(const MyApp());
 }
@@ -21,17 +23,18 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Chatting App',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF6366F1),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF8FAFF),
-        useMaterial3: true,
-      ),
-      home: const AuthGate(),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.instance.mode,
+      builder: (context, mode, _) {
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Chatting App',
+          theme: AppTheme.light(),
+          darkTheme: AppTheme.dark(),
+          themeMode: mode,
+          home: const AuthGate(),
+        );
+      },
     );
   }
 }
@@ -45,7 +48,6 @@ class AuthGate extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuthService().authStateChanges,
       builder: (context, snapshot) {
-        // Still checking whether a user is saved on this device.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
@@ -54,12 +56,10 @@ class AuthGate extends StatelessWidget {
           );
         }
 
-        // A user exists -> logged in, show the chat list.
         if (snapshot.hasData) {
           return const ChatListScreen();
         }
 
-        // No user -> show login.
         return const LoginScreen();
       },
     );
