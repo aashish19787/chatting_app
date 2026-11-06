@@ -13,6 +13,9 @@ class ChatModel {
   /// When each user last opened this chat.
   final Map<String, DateTime> lastRead;
 
+  /// When each user last pressed a key in this chat.
+  final Map<String, DateTime> typingAt;
+
   ChatModel({
     required this.id,
     required this.participants,
@@ -21,7 +24,18 @@ class ChatModel {
     required this.lastSenderId,
     this.unreadCount = const {},
     this.lastRead = const {},
+    this.typingAt = const {},
   });
+
+  static Map<String, DateTime> _readTimes(dynamic raw) {
+    final result = <String, DateTime>{};
+    if (raw is Map) {
+      raw.forEach((key, value) {
+        if (value is Timestamp) result[key.toString()] = value.toDate();
+      });
+    }
+    return result;
+  }
 
   factory ChatModel.fromMap(String id, Map<String, dynamic> map) {
     final unread = <String, int>{};
@@ -32,23 +46,16 @@ class ChatModel {
       });
     }
 
-    final reads = <String, DateTime>{};
-    final rawReads = map['lastRead'];
-    if (rawReads is Map) {
-      rawReads.forEach((key, value) {
-        if (value is Timestamp) reads[key.toString()] = value.toDate();
-      });
-    }
-
     return ChatModel(
       id: id,
       participants: List<String>.from(map['participants'] ?? []),
       lastMessage: map['lastMessage'] ?? '',
       lastMessageTime:
-      (map['lastMessageTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          (map['lastMessageTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
       lastSenderId: map['lastSenderId'] ?? '',
       unreadCount: unread,
-      lastRead: reads,
+      lastRead: _readTimes(map['lastRead']),
+      typingAt: _readTimes(map['typingAt']),
     );
   }
 
@@ -56,6 +63,12 @@ class ChatModel {
     return participants.firstWhere((id) => id != myUid, orElse: () => '');
   }
 
-  /// Unread messages for this user (0 if none).
   int unreadFor(String uid) => unreadCount[uid] ?? 0;
+
+  /// True if this user typed something in the last 6 seconds.
+  bool isTyping(String uid) {
+    final time = typingAt[uid];
+    if (time == null) return false;
+    return DateTime.now().difference(time) < const Duration(seconds: 6);
+  }
 }

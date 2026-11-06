@@ -1,1 +1,5 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"chatting-app-83e60","appId":"1:6333787880:android:639274da2cb0d3f47ce35d","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"chatting-app-83e60","appId":"1:6333787880:ios:e31857843ba1b42a7ce35d","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"macos":{"default":{"projectId":"chatting-app-83e60","appId":"1:6333787880:ios:e31857843ba1b42a7ce35d","uploadDebugSymbols":false,"fileOutput":"macos/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"chatting-app-83e60","configurations":{"android":"1:6333787880:android:639274da2cb0d3f47ce35d","ios":"1:6333787880:ios:e31857843ba1b42a7ce35d","macos":"1:6333787880:ios:e31857843ba1b42a7ce35d","web":"1:6333787880:web:5dcbafa073855bea7ce35d"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}
