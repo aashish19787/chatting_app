@@ -216,4 +216,81 @@ class FirestoreService {
       // The chat may not exist yet. Safe to ignore.
     }
   }
+
+  // ---------------------------------------------------------------
+  // GROUPS
+  // ---------------------------------------------------------------
+
+  /// Create a group. Returns the new chat ID.
+  Future<String> createGroup({
+    required String creatorId,
+    required String name,
+    required List<String> memberIds,
+  }) async {
+    final participants = {creatorId, ...memberIds}.toList()..sort();
+    final ref = _chats.doc();
+
+    await ref.set({
+      'participants': participants,
+      'isGroup': true,
+      'groupName': name.trim(),
+      'createdBy': creatorId,
+      'lastMessage': 'Group created',
+      'lastMessageTime': FieldValue.serverTimestamp(),
+      'lastSenderId': creatorId,
+      'unreadCount': {for (final id in participants) id: 0},
+    });
+    return ref.id;
+  }
+
+  /// Send a message into a group (chat ID already known).
+  Future<void> sendGroupMessage({
+    required String chatId,
+    required String senderId,
+    required List<String> participants,
+    String text = '',
+    String imageUrl = '',
+    String replyToId = '',
+    String replyToText = '',
+    String replyToSenderId = '',
+  }) async {
+    final chatRef = _chats.doc(chatId);
+
+    await chatRef.update({
+      'lastMessage': imageUrl.isNotEmpty ? '📷 Photo' : text,
+      'lastMessageTime': FieldValue.serverTimestamp(),
+      'lastSenderId': senderId,
+      for (final id in participants)
+        'unreadCount.$id': id == senderId ? 0 : FieldValue.increment(1),
+    });
+
+    final message = MessageModel(
+      id: '',
+      senderId: senderId,
+      text: text,
+      imageUrl: imageUrl,
+      replyToId: replyToId,
+      replyToText: replyToText,
+      replyToSenderId: replyToSenderId,
+      createdAt: DateTime.now(),
+    );
+    await chatRef.collection('messages').add(message.toMap());
+  }
+
+  /// Remove myself from a group.
+  Future<void> leaveGroup(String chatId, String myUid) async {
+    await _chats.doc(chatId).update({
+      'participants': FieldValue.arrayRemove([myUid]),
+    });
+  }
+
+  /// Load several users at once (for member lists and sender names).
+  Future<Map<String, UserModel>> getUsers(List<String> uids) async {
+    final result = <String, UserModel>{};
+    for (final uid in uids) {
+      final user = await getUser(uid);
+      if (user != null) result[uid] = user;
+    }
+    return result;
+  }
 }

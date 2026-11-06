@@ -16,6 +16,11 @@ class ChatModel {
   /// When each user last pressed a key in this chat.
   final Map<String, DateTime> typingAt;
 
+  /// Group chat info.
+  final bool isGroup;
+  final String groupName;
+  final String createdBy;
+
   ChatModel({
     required this.id,
     required this.participants,
@@ -25,6 +30,9 @@ class ChatModel {
     this.unreadCount = const {},
     this.lastRead = const {},
     this.typingAt = const {},
+    this.isGroup = false,
+    this.groupName = '',
+    this.createdBy = '',
   });
 
   static Map<String, DateTime> _readTimes(dynamic raw) {
@@ -56,6 +64,9 @@ class ChatModel {
       unreadCount: unread,
       lastRead: _readTimes(map['lastRead']),
       typingAt: _readTimes(map['typingAt']),
+      isGroup: map['isGroup'] ?? false,
+      groupName: map['groupName'] ?? '',
+      createdBy: map['createdBy'] ?? '',
     );
   }
 

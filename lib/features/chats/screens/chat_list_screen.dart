@@ -1,3 +1,5 @@
+import '../widgets/group_tile.dart';
+import 'new_group_screen.dart';
 import '../../../core/theme/theme_controller.dart';
 
 import 'dart:async';
@@ -210,6 +212,15 @@ class _ChatListScreenState extends State<ChatListScreen>
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.group_add_rounded, color: Color(0xFF64748B)),
+            tooltip: 'New group',
+            onPressed: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (_) => const NewGroupScreen()));
+            },
+          ),
+          IconButton(
             icon: Icon(
               Theme.of(context).brightness == Brightness.dark
                   ? Icons.light_mode_rounded
@@ -274,6 +285,14 @@ class _ChatListScreenState extends State<ChatListScreen>
             itemBuilder: (context, index) {
               final chat = chats[index];
 
+              if (chat.isGroup) {
+                return GroupTile(
+                  chat: chat,
+                  myUid: myUid,
+                  timeText: _formatTime(chat.lastMessageTime),
+                  firestoreService: _firestoreService,
+                );
+              }
               return _ChatTile(
                 chat: chat,
                 myUid: myUid,
