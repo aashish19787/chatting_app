@@ -59,7 +59,7 @@ class GroupTile extends StatelessWidget {
                 border: Border.all(
                   color: hasUnread
                       ? const Color(0xFF6366F1)
-                      : const Color(0xFFE2E8F0),
+                      : Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
               child: Row(

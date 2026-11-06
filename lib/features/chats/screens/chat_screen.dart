@@ -174,7 +174,6 @@ class _ChatScreenState extends State<ChatScreen> {
   // ---------------------------------------------------------------
 
   void _showMessageMenu(MessageModel message, bool isNewest) {
-    if (message.deleted) return;
     final isMe = message.senderId == _myUid;
 
     showModalBottomSheet(
@@ -184,21 +183,30 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.reply_rounded),
-              title: const Text('Reply'),
+              leading: const Icon(Icons.visibility_off_outlined),
+              title: const Text('Delete for me'),
               onTap: () {
                 Navigator.pop(sheetContext);
-                setState(() => _replyingTo = message);
+                _hideForMe(message);
               },
             ),
-            if (isMe)
+            if (!message.deleted)
+              ListTile(
+                leading: const Icon(Icons.reply_rounded),
+                title: const Text('Reply'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  setState(() => _replyingTo = message);
+                },
+              ),
+            if (isMe && !message.deleted)
               ListTile(
                 leading: const Icon(
                   Icons.delete_outline_rounded,
                   color: Colors.redAccent,
                 ),
                 title: const Text(
-                  'Delete message',
+                  'Delete for everyone',
                   style: TextStyle(color: Colors.redAccent),
                 ),
                 onTap: () {
@@ -210,6 +218,15 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _hideForMe(MessageModel message) async {
+    try {
+      await _firestoreService.hideMessage(_chatId, _myUid, message.id);
+    } catch (_) {
+      if (!mounted) return;
+      _showError('Could not delete the message.');
+    }
   }
 
   Future<void> _confirmDelete(MessageModel message, bool isNewest) async {
@@ -290,7 +307,7 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.symmetric(vertical: 10),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
-          color: const Color(0xFFE2E8F0),
+          color: Theme.of(context).colorScheme.outlineVariant,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
@@ -325,7 +342,9 @@ class _ChatScreenState extends State<ChatScreen> {
   /// The small quoted box shown inside a reply.
   Widget _buildReplyQuote(MessageModel m, bool isMe) {
     final name = m.replyToSenderId == _myUid ? 'You' : widget.otherUser.name;
-    final textColor = isMe ? Colors.white : const Color(0xFF172554);
+    final textColor = isMe
+        ? Colors.white
+        : Theme.of(context).colorScheme.onSurface;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 6),
@@ -333,7 +352,7 @@ class _ChatScreenState extends State<ChatScreen> {
       decoration: BoxDecoration(
         color: isMe
             ? Colors.white.withValues(alpha: 0.18)
-            : const Color(0xFFF1F5F9),
+            : Theme.of(context).colorScheme.surfaceContainerHighest,
         border: Border(
           left: BorderSide(color: isMe ? Colors.white : _primary, width: 3),
         ),
@@ -370,7 +389,9 @@ class _ChatScreenState extends State<ChatScreen> {
     bool isNewest,
   ) {
     final isMe = message.senderId == _myUid;
-    final textColor = isMe ? Colors.white : const Color(0xFF172554);
+    final textColor = isMe
+        ? Colors.white
+        : Theme.of(context).colorScheme.onSurface;
     final showImage = message.hasImage && !message.deleted;
 
     final isSeen =
@@ -384,21 +405,34 @@ class _ChatScreenState extends State<ChatScreen> {
         onLongPress: () => _showMessageMenu(message, isNewest),
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75,
+            maxWidth: MediaQuery.of(context).size.width * 0.78,
           ),
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: showImage
               ? const EdgeInsets.all(4)
               : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: isMe ? _primary : Colors.white,
+            color: isMe
+                ? null
+                : Theme.of(context).colorScheme.surfaceContainerHigh,
+            gradient: isMe
+                ? const LinearGradient(
+                    colors: [_primary, _secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(18),
               topRight: const Radius.circular(18),
               bottomLeft: Radius.circular(isMe ? 18 : 4),
               bottomRight: Radius.circular(isMe ? 4 : 18),
             ),
-            border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
+            border: isMe
+                ? null
+                : Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -518,7 +552,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final name = reply.senderId == _myUid ? 'yourself' : widget.otherUser.name;
 
     return Container(
-      color: const Color(0xFFEEF2FF),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
       padding: const EdgeInsets.fromLTRB(14, 8, 6, 8),
       child: Row(
         children: [
@@ -652,7 +686,12 @@ class _ChatScreenState extends State<ChatScreen> {
                       );
                     }
 
-                    final messages = snapshot.data!;
+                    final hidden =
+                        chatSnapshot.data?.hiddenFor(_myUid) ??
+                        const <String>[];
+                    final messages = snapshot.data!
+                        .where((m) => !hidden.contains(m.id))
+                        .toList();
 
                     if (messages.isEmpty) {
                       return Center(
@@ -729,7 +768,7 @@ class _ChatScreenState extends State<ChatScreen> {
           if (_isUploadingImage)
             Container(
               width: double.infinity,
-              color: const Color(0xFFEEF2FF),
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -757,7 +796,14 @@ class _ChatScreenState extends State<ChatScreen> {
             top: false,
             child: Container(
               padding: const EdgeInsets.fromLTRB(6, 8, 14, 10),
-              color: Theme.of(context).colorScheme.surface,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+              ),
               child: Row(
                 children: [
                   IconButton(
@@ -787,8 +833,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(24),
-                          borderSide: const BorderSide(
-                            color: Color(0xFFE2E8F0),
+                          borderSide: BorderSide(
+                            color: Theme.of(context).colorScheme.outlineVariant,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(

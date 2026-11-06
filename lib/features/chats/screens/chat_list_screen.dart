@@ -14,7 +14,7 @@ import '../../../common/widgets/user_avatar.dart';
 import '../../../services/notification_service.dart';
 
 import '../../contacts/screens/search_screen.dart';
-import '../../profile/screens/profile_screen.dart';
+import '../../profile/screens/user_profile_screen.dart';
 import 'chat_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
@@ -234,9 +234,11 @@ class _ChatListScreenState extends State<ChatListScreen>
             icon: const Icon(Icons.person_rounded, color: Color(0xFF64748B)),
             tooltip: 'My profile',
             onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => UserProfileScreen(uid: myUid),
+                ),
+              );
             },
           ),
           IconButton(
@@ -360,7 +362,7 @@ class _ChatTile extends StatelessWidget {
                 border: Border.all(
                   color: hasUnread
                       ? const Color(0xFF6366F1)
-                      : const Color(0xFFE2E8F0),
+                      : Theme.of(context).colorScheme.outlineVariant,
                 ),
               ),
               child: Row(
@@ -417,7 +419,7 @@ class _ChatTile extends StatelessWidget {
                                 ? FontWeight.bold
                                 : FontWeight.normal,
                             color: hasUnread
-                                ? const Color(0xFF172554)
+                                ? Theme.of(context).colorScheme.onSurface
                                 : const Color(0xFF64748B),
                           ),
                         ),

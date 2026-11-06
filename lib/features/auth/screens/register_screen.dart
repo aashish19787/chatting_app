@@ -113,7 +113,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -176,13 +178,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                   const SizedBox(height: 28),
 
-                  const Text(
+                  Text(
                     'Create Account',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF172554),
+                      color: Theme.of(context).colorScheme.onSurface,
                       letterSpacing: -0.8,
                     ),
                   ),
@@ -198,12 +200,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 35),
 
                   // Full name
-                  const Text(
+                  Text(
                     'Full Name',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Color(0xFF334155),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
 
@@ -232,12 +234,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 22),
 
                   // Email
-                  const Text(
+                  Text(
                     'Email Address',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Color(0xFF334155),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
 
@@ -267,12 +269,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 22),
 
                   // Password
-                  const Text(
+                  Text(
                     'Password',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Color(0xFF334155),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
 
@@ -313,12 +315,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 22),
 
                   // Confirm password
-                  const Text(
+                  Text(
                     'Confirm Password',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Color(0xFF334155),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
 

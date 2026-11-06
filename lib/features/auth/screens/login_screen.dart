@@ -102,7 +102,9 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderSide: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant,
+        ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -165,13 +167,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 28),
 
-                  const Text(
+                  Text(
                     'Welcome Back',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 30,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF172554),
+                      color: Theme.of(context).colorScheme.onSurface,
                       letterSpacing: -0.8,
                     ),
                   ),
@@ -187,12 +189,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 35),
 
                   // Email
-                  const Text(
+                  Text(
                     'Email Address',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Color(0xFF334155),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
 
@@ -222,12 +224,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 22),
 
                   // Password
-                  const Text(
+                  Text(
                     'Password',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 14,
-                      color: Color(0xFF334155),
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
 

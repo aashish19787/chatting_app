@@ -1,3 +1,5 @@
+import 'add_members_screen.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../common/widgets/user_avatar.dart';
@@ -115,6 +117,22 @@ class GroupInfoScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFF6366F1),
+                  child: Icon(Icons.person_add_rounded, color: Colors.white),
+                ),
+                title: const Text('Add people'),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AddMembersScreen(
+                      chatId: chatId,
+                      existing: chat.participants,
+                    ),
+                  ),
+                ),
+              ),
               const Text(
                 'Members',
                 style: TextStyle(

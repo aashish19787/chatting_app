@@ -293,4 +293,64 @@ class FirestoreService {
     }
     return result;
   }
+
+  /// Add people to an existing group.
+  Future<void> addGroupMembers(String chatId, List<String> newUids) async {
+    await _chats.doc(chatId).update({
+      'participants': FieldValue.arrayUnion(newUids),
+      for (final id in newUids) 'unreadCount.$id': 0,
+    });
+  }
+
+  /// "Delete for me": hide a message only on my side.
+  Future<void> hideMessage(
+    String chatId,
+    String myUid,
+    String messageId,
+  ) async {
+    await _chats.doc(chatId).update({
+      'hidden.$myUid': FieldValue.arrayUnion([messageId]),
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // PROFILE + FOLLOW
+  // ---------------------------------------------------------------
+
+  Future<void> updateBio(String uid, String bio) async {
+    await _users.doc(uid).update({'bio': bio});
+  }
+
+  /// UIDs of people who follow [uid].
+  Stream<List<String>> followersStream(String uid) {
+    return _users
+        .doc(uid)
+        .collection('followers')
+        .snapshots()
+        .map((s) => s.docs.map((d) => d.id).toList());
+  }
+
+  /// UIDs of people that [uid] follows.
+  Stream<List<String>> followingStream(String uid) {
+    return _users
+        .doc(uid)
+        .collection('following')
+        .snapshots()
+        .map((s) => s.docs.map((d) => d.id).toList());
+  }
+
+  Future<void> follow(String myUid, String targetUid) async {
+    final batch = _db.batch();
+    final data = {'createdAt': FieldValue.serverTimestamp()};
+    batch.set(_users.doc(targetUid).collection('followers').doc(myUid), data);
+    batch.set(_users.doc(myUid).collection('following').doc(targetUid), data);
+    await batch.commit();
+  }
+
+  Future<void> unfollow(String myUid, String targetUid) async {
+    final batch = _db.batch();
+    batch.delete(_users.doc(targetUid).collection('followers').doc(myUid));
+    batch.delete(_users.doc(myUid).collection('following').doc(targetUid));
+    await batch.commit();
+  }
 }

@@ -21,6 +21,9 @@ class ChatModel {
   final String groupName;
   final String createdBy;
 
+  /// Message IDs each user hid with "Delete for me".
+  final Map<String, List<String>> hidden;
+
   ChatModel({
     required this.id,
     required this.participants,
@@ -33,6 +36,7 @@ class ChatModel {
     this.isGroup = false,
     this.groupName = '',
     this.createdBy = '',
+    this.hidden = const {},
   });
 
   static Map<String, DateTime> _readTimes(dynamic raw) {
@@ -67,8 +71,15 @@ class ChatModel {
       isGroup: map['isGroup'] ?? false,
       groupName: map['groupName'] ?? '',
       createdBy: map['createdBy'] ?? '',
+      hidden: map['hidden'] is Map
+          ? (map['hidden'] as Map).map(
+              (k, v) => MapEntry(k.toString(), List<String>.from(v as List)),
+            )
+          : const {},
     );
   }
+
+  List<String> hiddenFor(String uid) => hidden[uid] ?? const [];
 
   String otherUserId(String myUid) {
     return participants.firstWhere((id) => id != myUid, orElse: () => '');

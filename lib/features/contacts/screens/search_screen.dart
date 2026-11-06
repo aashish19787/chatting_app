@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../models/user_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
-import '../../chats/screens/chat_screen.dart';
+import '../../profile/screens/user_profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -75,8 +75,9 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _onUserTap(UserModel user) {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => ChatScreen(otherUser: user)));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => UserProfileScreen(uid: user.uid)));
   }
 
   Widget _buildBody() {
@@ -123,7 +124,9 @@ class _SearchScreenState extends State<SearchScreen> {
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
               ),
               child: Row(
                 children: [
@@ -230,7 +233,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),

@@ -175,7 +175,6 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   }
 
   void _showMessageMenu(MessageModel message, bool isNewest) {
-    if (message.deleted) return;
     final isMe = message.senderId == _myUid;
 
     showModalBottomSheet(
@@ -185,21 +184,30 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.reply_rounded),
-              title: const Text('Reply'),
+              leading: const Icon(Icons.visibility_off_outlined),
+              title: const Text('Delete for me'),
               onTap: () {
                 Navigator.pop(sheetContext);
-                setState(() => _replyingTo = message);
+                _hideForMe(message);
               },
             ),
-            if (isMe)
+            if (!message.deleted)
+              ListTile(
+                leading: const Icon(Icons.reply_rounded),
+                title: const Text('Reply'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  setState(() => _replyingTo = message);
+                },
+              ),
+            if (isMe && !message.deleted)
               ListTile(
                 leading: const Icon(
                   Icons.delete_outline_rounded,
                   color: Colors.redAccent,
                 ),
                 title: const Text(
-                  'Delete message',
+                  'Delete for everyone',
                   style: TextStyle(color: Colors.redAccent),
                 ),
                 onTap: () {
@@ -211,6 +219,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _hideForMe(MessageModel message) async {
+    try {
+      await _firestoreService.hideMessage(widget.chatId, _myUid, message.id);
+    } catch (_) {
+      if (!mounted) return;
+      _showError('Could not delete the message.');
+    }
   }
 
   Future<void> _confirmDelete(MessageModel message, bool isNewest) async {
@@ -356,21 +373,34 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         onLongPress: () => _showMessageMenu(message, isNewest),
         child: Container(
           constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.75,
+            maxWidth: MediaQuery.of(context).size.width * 0.78,
           ),
           margin: const EdgeInsets.symmetric(vertical: 4),
           padding: showImage
               ? const EdgeInsets.all(4)
               : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: isMe ? _primary : cs.surface,
+            color: isMe
+                ? null
+                : Theme.of(context).colorScheme.surfaceContainerHigh,
+            gradient: isMe
+                ? const LinearGradient(
+                    colors: [_primary, _secondary],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(18),
               topRight: const Radius.circular(18),
               bottomLeft: Radius.circular(isMe ? 18 : 4),
               bottomRight: Radius.circular(isMe ? 4 : 18),
             ),
-            border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
+            border: isMe
+                ? null
+                : Border.all(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
           ),
           child: Column(
             crossAxisAlignment: isMe
@@ -631,7 +661,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                             );
                           }
 
-                          final messages = snapshot.data!;
+                          final hidden =
+                              chat?.hiddenFor(_myUid) ?? const <String>[];
+                          final messages = snapshot.data!
+                              .where((m) => !hidden.contains(m.id))
+                              .toList();
                           if (messages.isEmpty) {
                             return const Center(
                               child: Text(
@@ -706,7 +740,16 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                       top: false,
                       child: Container(
                         padding: const EdgeInsets.fromLTRB(6, 8, 14, 10),
-                        color: cs.surface,
+                        decoration: BoxDecoration(
+                          color: cs.surface,
+                          border: Border(
+                            top: BorderSide(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .outlineVariant,
+                            ),
+                          ),
+                        ),
                         child: Row(
                           children: [
                             IconButton(

@@ -5,10 +5,8 @@ class UserModel {
   final String name;
   final String email;
   final String photoUrl;
-
-  /// Profile picture, stored as base64 text (empty = no picture).
   final String photoBase64;
-
+  final String bio;
   final DateTime createdAt;
   final bool isOnline;
   final DateTime? lastSeen;
@@ -20,17 +18,18 @@ class UserModel {
     required this.photoUrl,
     required this.createdAt,
     this.photoBase64 = '',
+    this.bio = '',
     this.isOnline = false,
     this.lastSeen,
   });
 
-  /// Returns a copy of this user with only the given fields changed.
   UserModel copyWith({
     String? uid,
     String? name,
     String? email,
     String? photoUrl,
     String? photoBase64,
+    String? bio,
     DateTime? createdAt,
     bool? isOnline,
     DateTime? lastSeen,
@@ -41,6 +40,7 @@ class UserModel {
       email: email ?? this.email,
       photoUrl: photoUrl ?? this.photoUrl,
       photoBase64: photoBase64 ?? this.photoBase64,
+      bio: bio ?? this.bio,
       createdAt: createdAt ?? this.createdAt,
       isOnline: isOnline ?? this.isOnline,
       lastSeen: lastSeen ?? this.lastSeen,
@@ -60,6 +60,7 @@ class UserModel {
       'email': email,
       'photoUrl': photoUrl,
       'photoBase64': photoBase64,
+      'bio': bio,
       'createdAt': Timestamp.fromDate(createdAt),
       'isOnline': isOnline,
       'lastSeen': lastSeen == null
@@ -75,6 +76,7 @@ class UserModel {
       email: map['email'] ?? '',
       photoUrl: map['photoUrl'] ?? '',
       photoBase64: map['photoBase64'] ?? '',
+      bio: map['bio'] ?? '',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isOnline: map['isOnline'] ?? false,
       lastSeen: (map['lastSeen'] as Timestamp?)?.toDate(),

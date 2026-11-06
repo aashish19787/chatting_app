@@ -10,6 +10,24 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    match /users/{userId}/followers/{followerId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.auth.uid == followerId
+                    && followerId != userId;
+      allow delete: if request.auth != null && request.auth.uid == followerId;
+      allow update: if false;
+    }
+
+    match /users/{userId}/following/{targetId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && targetId != userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow update: if false;
+    }
+
     match /chats/{chatId} {
       allow get: if request.auth != null
                  && (request.auth.uid in chatId.split('_')
@@ -37,7 +55,8 @@ service cloud.firestore {
                       ||
                       (resource.data.isGroup == true
                         && request.resource.data.participants.hasAll(resource.data.participants.removeAll([request.auth.uid]))
-                        && request.resource.data.participants.size() >= resource.data.participants.size() - 1)
+                        && request.resource.data.participants.size() >= resource.data.participants.size() - 1
+                        && request.resource.data.participants.size() <= 50)
                     );
 
       allow delete: if false;
