@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/chat_model.dart';
+import 'block_list.dart';
 import '../models/comment_model.dart';
 import '../models/message_model.dart';
 import '../models/notification_model.dart';
@@ -67,7 +68,11 @@ class FirestoreService {
 
     return snapshot.docs
         .map((doc) => UserModel.fromMap(doc.data()))
-        .where((user) => user.uid != currentUid)
+        .where(
+          (user) =>
+              user.uid != currentUid &&
+              !BlockList.instance.ids.value.contains(user.uid),
+        )
         .toList();
   }
 
@@ -115,6 +120,7 @@ class FirestoreService {
     String replyToText = '',
     String replyToSenderId = '',
   }) async {
+    await _ensureNotBlocked(senderId, receiverId);
     final chatId = getChatId(senderId, receiverId);
     final chatRef = _chats.doc(chatId);
     final participants = [senderId, receiverId]..sort();
@@ -623,4 +629,61 @@ class FirestoreService {
       'unreadCount.$uid': FieldValue.delete(),
     });
   }
+
+  // ---------------------------------------------------------------
+  // BLOCK + REPORT
+  // ---------------------------------------------------------------
+
+  Future<void> _ensureNotBlocked(String senderId, String receiverId) async {
+    final theyBlockedMe = await _users
+        .doc(receiverId)
+        .collection('blocked')
+        .doc(senderId)
+        .get();
+    final iBlockedThem = await _users
+        .doc(senderId)
+        .collection('blocked')
+        .doc(receiverId)
+        .get();
+    if (theyBlockedMe.exists || iBlockedThem.exists) {
+      throw BlockedException();
+    }
+  }
+
+  Stream<List<String>> blockedStream(String uid) {
+    return _users
+        .doc(uid)
+        .collection('blocked')
+        .snapshots()
+        .map((s) => s.docs.map((d) => d.id).toList());
+  }
+
+  /// Block someone and remove any follow between us (both directions).
+  Future<void> blockUser(String myUid, String targetUid) async {
+    final batch = _db.batch();
+    batch.set(_users.doc(myUid).collection('blocked').doc(targetUid), {
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    batch.delete(_users.doc(myUid).collection('following').doc(targetUid));
+    batch.delete(_users.doc(targetUid).collection('followers').doc(myUid));
+    batch.delete(_users.doc(targetUid).collection('following').doc(myUid));
+    batch.delete(_users.doc(myUid).collection('followers').doc(targetUid));
+    await batch.commit();
+  }
+
+  Future<void> unblockUser(String myUid, String targetUid) async {
+    await _users.doc(myUid).collection('blocked').doc(targetUid).delete();
+  }
+
+  Future<void> reportUser(String myUid, String targetUid, String reason) async {
+    await _db.collection('reports').add({
+      'reporterId': myUid,
+      'reportedId': targetUid,
+      'reason': reason,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
 }
+
+/// Thrown when a message can't be sent because of a block.
+class BlockedException implements Exception {}

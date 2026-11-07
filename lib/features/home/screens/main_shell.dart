@@ -1,3 +1,5 @@
+import '../../../services/block_list.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../models/chat_model.dart';
@@ -21,6 +23,19 @@ class _MainShellState extends State<MainShell> {
   final _authService = FirebaseAuthService();
 
   int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    final uid = _authService.currentUser?.uid;
+    if (uid != null) BlockList.instance.start(uid);
+  }
+
+  @override
+  void dispose() {
+    BlockList.instance.stop();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

@@ -1,3 +1,5 @@
+import 'blocked_screen.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../common/widgets/user_avatar.dart';
@@ -160,6 +162,12 @@ class MenuScreen extends StatelessWidget {
             },
           ),
           const Divider(height: 24),
+          _item(
+            icon: Icons.block_rounded,
+            title: 'Blocked people',
+            onTap: () => Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const BlockedScreen())),
+          ),
           _item(
             icon: Icons.logout_rounded,
             title: 'Log out',

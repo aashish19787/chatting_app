@@ -1,3 +1,4 @@
+import '../../../services/block_list.dart';
 import '../widgets/chat_options.dart';
 import '../widgets/active_now_strip.dart';
 
@@ -48,7 +49,12 @@ class _ChatListScreenState extends State<ChatListScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    BlockList.instance.ids.addListener(_onBlocksChanged);
     _init();
+  }
+
+  void _onBlocksChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _init() async {
@@ -64,6 +70,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    BlockList.instance.ids.removeListener(_onBlocksChanged);
     _heartbeat?.cancel();
     _chatSub?.cancel();
     _searchController.dispose();
@@ -351,7 +358,12 @@ class _ChatListScreenState extends State<ChatListScreen>
             );
           }
 
-          final all = snapshot.data!;
+          final blockedIds = BlockList.instance.ids.value;
+          final all = snapshot.data!
+              .where(
+                (c) => c.isGroup || !blockedIds.contains(c.otherUserId(myUid)),
+              )
+              .toList();
           _loadNames(all, myUid);
 
           final unreadCount = all.where((c) => c.unreadFor(myUid) > 0).length;

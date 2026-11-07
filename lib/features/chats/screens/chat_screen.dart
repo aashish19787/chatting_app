@@ -118,11 +118,15 @@ class _ChatScreenState extends State<ChatScreen> {
         replyToSenderId: reply?.senderId ?? '',
       );
       _firestoreService.setTyping(_chatId, _myUid, false);
-    } catch (_) {
+    } catch (e) {
       if (!mounted) return;
       _messageController.text = text;
       setState(() => _replyingTo = reply);
-      _showError('Message not sent. Please try again.');
+      _showError(
+        e is BlockedException
+            ? "You can't message this person."
+            : 'Message not sent. Please try again.',
+      );
     } finally {
       if (mounted) setState(() => _isSending = false);
     }

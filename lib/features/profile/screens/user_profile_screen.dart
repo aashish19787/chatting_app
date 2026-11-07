@@ -1,3 +1,4 @@
+import '../../../services/block_list.dart';
 import '../widgets/posts_grid.dart';
 
 import 'package:flutter/material.dart';
@@ -98,6 +99,99 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
 
+  Future<void> _onMenu(String value) async {
+    if (value == 'block') await _block();
+    if (value == 'unblock') await _unblock();
+    if (value == 'report') await _report();
+  }
+
+  Future<void> _block() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Block this person?'),
+        content: const Text(
+          'They will not be able to message you, and you will stop following each other.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text(
+              'Block',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+
+    try {
+      await _firestoreService.blockUser(_myUid, widget.uid);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Blocked.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showError('Could not block this person.');
+    }
+  }
+
+  Future<void> _unblock() async {
+    try {
+      await _firestoreService.unblockUser(_myUid, widget.uid);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unblocked.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showError('Could not unblock this person.');
+    }
+  }
+
+  Future<void> _report() async {
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => SimpleDialog(
+        title: const Text('Report this person'),
+        children: [
+          for (final r in ['Spam', 'Harassment', 'Fake account', 'Other'])
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(dialogContext, r),
+              child: Text(r),
+            ),
+        ],
+      ),
+    );
+    if (reason == null) return;
+
+    try {
+      await _firestoreService.reportUser(_myUid, widget.uid, reason);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Thanks, your report was sent.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showError('Could not send the report.');
+    }
+  }
+
   String _short(int n) {
     if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
     if (n >= 1000) return '${(n / 1000).toStringAsFixed(1)}K';
@@ -143,6 +237,24 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _isMe ? 'My profile' : 'Profile',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          if (!_isMe)
+            PopupMenuButton<String>(
+              onSelected: _onMenu,
+              itemBuilder: (_) {
+                final blocked = BlockList.instance.ids.value.contains(
+                  widget.uid,
+                );
+                return [
+                  PopupMenuItem(
+                    value: blocked ? 'unblock' : 'block',
+                    child: Text(blocked ? 'Unblock' : 'Block'),
+                  ),
+                  const PopupMenuItem(value: 'report', child: Text('Report')),
+                ];
+              },
+            ),
+        ],
       ),
       body: StreamBuilder<UserModel?>(
         stream: _firestoreService.userStream(widget.uid),
