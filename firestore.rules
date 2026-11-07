@@ -28,6 +28,25 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    match /users/{userId}/notifications/{notificationId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['type', 'fromId', 'postId', 'postImageUrl', 'createdAt', 'read'])
+                    && request.resource.data.fromId == request.auth.uid
+                    && userId != request.auth.uid
+                    && request.resource.data.type in ['follow', 'like', 'comment']
+                    && request.resource.data.read == false
+                    && request.resource.data.createdAt == request.time;
+
+      allow update: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+
+      allow delete: if request.auth != null
+                    && (request.auth.uid == userId || resource.data.fromId == request.auth.uid);
+    }
+
     match /posts/{postId} {
       allow read: if request.auth != null;
 
@@ -37,7 +56,6 @@ service cloud.firestore {
                     && request.resource.data.caption.size() <= 300
                     && request.resource.data.createdAt == request.time;
 
-      // Anyone can like/unlike, but only their own like can change.
       allow update: if request.auth != null
                     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likedBy'])
                     && request.resource.data.likedBy.removeAll([request.auth.uid]).toSet()
@@ -47,24 +65,22 @@ service cloud.firestore {
                     && resource.data.authorId == request.auth.uid;
     }
 
-    match /users/{userId}/notifications/{notificationId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
+    match /posts/{postId}/comments/{commentId} {
+      allow read: if request.auth != null;
 
       allow create: if request.auth != null
-                    && request.resource.data.keys().hasOnly(['type', 'fromId', 'postId', 'postImageUrl', 'createdAt', 'read'])
-                    && request.resource.data.fromId == request.auth.uid
-                    && userId != request.auth.uid
-                    && request.resource.data.type in ['follow', 'like']
-                    && request.resource.data.read == false
+                    && request.resource.data.keys().hasOnly(['authorId', 'text', 'createdAt'])
+                    && request.resource.data.authorId == request.auth.uid
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 300
                     && request.resource.data.createdAt == request.time;
 
-      allow update: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow update: if false;
 
-      // The owner can delete; the sender can take back their own (unfollow / unlike).
       allow delete: if request.auth != null
-                    && (request.auth.uid == userId || resource.data.fromId == request.auth.uid);
+                    && (resource.data.authorId == request.auth.uid
+                        || get(/databases/$(database)/documents/posts/$(postId)).data.authorId == request.auth.uid);
     }
 
     match /chats/{chatId} {
@@ -89,13 +105,25 @@ service cloud.firestore {
 
       allow update: if request.auth != null
                     && request.auth.uid in resource.data.participants
+                    // Only the creator may rename or change the photo.
+                    && (
+                      !request.resource.data.diff(resource.data).affectedKeys().hasAny(['groupName', 'groupPhoto'])
+                      || (resource.data.isGroup == true && resource.data.createdBy == request.auth.uid)
+                    )
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isGroup', 'createdBy'])
                     && (
                       request.resource.data.participants == resource.data.participants
-                      ||
-                      (resource.data.isGroup == true
-                        && request.resource.data.participants.hasAll(resource.data.participants.removeAll([request.auth.uid]))
-                        && request.resource.data.participants.size() >= resource.data.participants.size() - 1
-                        && request.resource.data.participants.size() <= 50)
+                      // Anyone in a group can add people or leave.
+                      || (resource.data.isGroup == true
+                          && request.resource.data.participants.hasAll(resource.data.participants.removeAll([request.auth.uid]))
+                          && request.resource.data.participants.size() >= resource.data.participants.size() - 1
+                          && request.resource.data.participants.size() <= 50)
+                      // The creator may remove other people.
+                      || (resource.data.isGroup == true
+                          && resource.data.createdBy == request.auth.uid
+                          && request.resource.data.participants.hasAll([request.auth.uid])
+                          && request.resource.data.participants.size() >= 2
+                          && resource.data.participants.hasAll(request.resource.data.participants))
                     );
 
       allow delete: if false;
@@ -118,8 +146,13 @@ service cloud.firestore {
 
         allow update: if request.auth != null
                       && isMember()
-                      && resource.data.senderId == request.auth.uid
-                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted', 'text', 'imageUrl']);
+                      && (
+                        (resource.data.senderId == request.auth.uid
+                          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleted', 'text', 'imageUrl']))
+                        ||
+                        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reactions'])
+                          && request.resource.data.reactions.diff(resource.data.get('reactions', {})).affectedKeys().hasOnly([request.auth.uid]))
+                      );
 
         allow delete: if false;
       }

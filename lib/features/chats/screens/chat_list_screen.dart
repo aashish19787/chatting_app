@@ -1,3 +1,4 @@
+import '../widgets/chat_options.dart';
 import '../widgets/active_now_strip.dart';
 
 import 'dart:async';
@@ -119,6 +120,7 @@ class _ChatListScreenState extends State<ChatListScreen>
             previous == null || chat.lastMessageTime.isAfter(previous);
         if (!isNew) continue;
         if (chat.lastSenderId == myUid) continue;
+        if (chat.isMutedFor(myUid)) continue;
         if (NotificationService.instance.activeChatId == chat.id) continue;
 
         final sender = await _firestoreService.getUser(chat.lastSenderId);
@@ -353,7 +355,11 @@ class _ChatListScreenState extends State<ChatListScreen>
           _loadNames(all, myUid);
 
           final unreadCount = all.where((c) => c.unreadFor(myUid) > 0).length;
-          final chats = _applyFilters(all, myUid);
+          final filtered = _applyFilters(all, myUid);
+          final chats = [
+            ...filtered.where((c) => c.isPinnedFor(myUid)),
+            ...filtered.where((c) => !c.isPinnedFor(myUid)),
+          ];
 
           return Column(
             children: [
@@ -439,6 +445,8 @@ class _ChatTile extends StatelessWidget {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
+            onLongPress: () =>
+                showChatOptions(context, chat, myUid, firestoreService),
             onTap: other == null
                 ? null
                 : () {
@@ -520,6 +528,7 @@ class _ChatTile extends StatelessWidget {
                               : const Color(0xFF94A3B8),
                         ),
                       ),
+                      ChatFlags(chat: chat, myUid: myUid),
                       if (hasUnread) ...[
                         const SizedBox(height: 6),
                         Container(

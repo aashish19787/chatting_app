@@ -4,6 +4,7 @@ import '../../../models/chat_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
 import '../../chats/screens/chat_list_screen.dart';
+import '../../feed/screens/feed_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 import 'menu_screen.dart';
 import 'people_screen.dart';
@@ -26,7 +27,6 @@ class _MainShellState extends State<MainShell> {
     final myUid = _authService.currentUser?.uid ?? '';
 
     return PopScope(
-      // Back on another tab goes to Chats first.
       canPop: _index == 0,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) setState(() => _index = 0);
@@ -36,8 +36,9 @@ class _MainShellState extends State<MainShell> {
           index: _index,
           children: [
             const ChatListScreen(),
+            const FeedScreen(),
             const PeopleScreen(),
-            NotificationsScreen(active: _index == 2),
+            NotificationsScreen(active: _index == 3),
             const MenuScreen(),
           ],
         ),
@@ -63,12 +64,17 @@ class _MainShellState extends State<MainShell> {
               selectedIcon: const Icon(Icons.chat_bubble_rounded),
             ),
             const NavigationDestination(
+              label: 'Home',
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+            ),
+            const NavigationDestination(
               label: 'People',
               icon: Icon(Icons.people_outline_rounded),
               selectedIcon: Icon(Icons.people_rounded),
             ),
             NavigationDestination(
-              label: 'Notifications',
+              label: 'Alerts',
               icon: StreamBuilder<int>(
                 stream: _firestoreService.unreadNotificationsCount(myUid),
                 builder: (context, snapshot) {

@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/chat_model.dart';
+import '../models/comment_model.dart';
 import '../models/message_model.dart';
 import '../models/notification_model.dart';
 import '../models/post_model.dart';
@@ -511,5 +512,115 @@ class FirestoreService {
 
   Future<void> deleteNote(String uid) async {
     await _users.doc(uid).update({'note': '', 'noteAt': FieldValue.delete()});
+  }
+
+  // ---------------------------------------------------------------
+  // FEED + COMMENTS
+  // ---------------------------------------------------------------
+
+  /// Posts from the given authors, newest first (at most 30 authors).
+  Stream<List<PostModel>> feedStream(List<String> authorIds) {
+    final ids = authorIds.take(30).toList();
+    if (ids.isEmpty) return Stream.value(const <PostModel>[]);
+
+    return _posts.where('authorId', whereIn: ids).snapshots().map((s) {
+      final posts = s.docs
+          .map((d) => PostModel.fromMap(d.id, d.data()))
+          .toList();
+      posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return posts.take(50).toList();
+    });
+  }
+
+  Stream<List<CommentModel>> commentsStream(String postId) {
+    return _posts
+        .doc(postId)
+        .collection('comments')
+        .orderBy('createdAt')
+        .snapshots()
+        .map(
+          (s) =>
+              s.docs.map((d) => CommentModel.fromMap(d.id, d.data())).toList(),
+        );
+  }
+
+  Stream<int> commentCountStream(String postId) {
+    return _posts
+        .doc(postId)
+        .collection('comments')
+        .snapshots()
+        .map((s) => s.docs.length);
+  }
+
+  Future<void> addComment(PostModel post, String myUid, String text) async {
+    final ref = await _posts.doc(post.id).collection('comments').add({
+      'authorId': myUid,
+      'text': text.trim(),
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+
+    if (post.authorId != myUid) {
+      await _notify(post.authorId, 'comment_${post.id}_${ref.id}', {
+        'type': 'comment',
+        'fromId': myUid,
+        'postId': post.id,
+        'postImageUrl': post.imageUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+      });
+    }
+  }
+
+  Future<void> deleteComment(PostModel post, String commentId) async {
+    await _posts.doc(post.id).collection('comments').doc(commentId).delete();
+    await _removeNotification(post.authorId, 'comment_${post.id}_$commentId');
+  }
+
+  // ---------------------------------------------------------------
+  // REACTIONS, PIN, MUTE
+  // ---------------------------------------------------------------
+
+  /// Set my reaction on a message (emoji = null removes it).
+  Future<void> setReaction(
+    String chatId,
+    String messageId,
+    String myUid,
+    String? emoji,
+  ) async {
+    await _chats.doc(chatId).collection('messages').doc(messageId).update({
+      'reactions.$myUid': emoji ?? FieldValue.delete(),
+    });
+  }
+
+  /// field is 'pinned' or 'muted'.
+  Future<void> setChatFlag(
+    String chatId,
+    String field,
+    String myUid,
+    bool on,
+  ) async {
+    await _chats.doc(chatId).update({
+      '$field.$myUid': on ? true : FieldValue.delete(),
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // GROUP ADMIN
+  // ---------------------------------------------------------------
+
+  Future<void> renameGroup(String chatId, String name) async {
+    await _chats.doc(chatId).update({'groupName': name.trim()});
+  }
+
+  Future<void> setGroupPhoto(String chatId, String photoBase64) async {
+    await _chats.doc(chatId).update({'groupPhoto': photoBase64});
+  }
+
+  /// Remove another person from a group (creator only).
+  Future<void> removeGroupMember(String chatId, String uid) async {
+    await _chats.doc(chatId).update({
+      'participants': FieldValue.arrayRemove([uid]),
+      'unreadCount.$uid': FieldValue.delete(),
+    });
   }
 }

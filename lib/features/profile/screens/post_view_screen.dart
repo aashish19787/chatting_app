@@ -1,3 +1,5 @@
+import 'comments_screen.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../common/widgets/user_avatar.dart';
@@ -160,6 +162,14 @@ class PostViewScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        ListTile(
+          dense: true,
+          leading: const Icon(Icons.mode_comment_outlined),
+          title: const Text('View comments'),
+          onTap: () => Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => CommentsScreen(post: post))),
         ),
         if (post.caption.isNotEmpty)
           Padding(

@@ -1,3 +1,6 @@
+import '../../../common/widgets/group_avatar.dart';
+import 'chat_options.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../models/chat_model.dart';
@@ -42,6 +45,8 @@ class GroupTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
+            onLongPress: () =>
+                showChatOptions(context, chat, myUid, firestoreService),
             onTap: () {
               Navigator.of(context).push(
                 MaterialPageRoute(
@@ -56,23 +61,7 @@ class GroupTile extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               child: Row(
                 children: [
-                  Container(
-                    height: 52,
-                    width: 52,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(26),
-                    ),
-                    child: const Icon(
-                      Icons.groups_rounded,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                  ),
+                  GroupAvatar(photoBase64: chat.groupPhoto, size: 52),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -118,6 +107,7 @@ class GroupTile extends StatelessWidget {
                               : const Color(0xFF94A3B8),
                         ),
                       ),
+                      ChatFlags(chat: chat, myUid: myUid),
                       if (hasUnread) ...[
                         const SizedBox(height: 6),
                         Container(

@@ -86,7 +86,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 TextSpan(
                   text: isFollow
                       ? ' started following you.'
-                      : ' liked your post.',
+                      : (n.type == 'comment'
+                            ? ' commented on your post.'
+                            : ' liked your post.'),
                 ),
                 TextSpan(
                   text: '  ${_ago(n.createdAt)}',

@@ -3,11 +3,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 
+import '../core/constants/app_config.dart';
+
 /// Uploads images to Cloudinary and returns the image link.
 class StorageService {
-  // Not secrets. Change the cloud name here if yours is different.
-  static const _cloudName = 'mklze78y';
-  static const _uploadPreset = 'lvf06zdn';
+  static const _cloudName = AppConfig.cloudinaryCloudName;
+  static const _uploadPreset = AppConfig.cloudinaryUploadPreset;
 
   Future<String> uploadChatImage(XFile file) async {
     final uri = Uri.parse(
@@ -18,7 +19,7 @@ class StorageService {
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = _uploadPreset
-      ..fields['folder'] = 'chat_images'
+      ..fields['folder'] = AppConfig.cloudinaryFolder
       ..files.add(
         http.MultipartFile.fromBytes(
           'file',

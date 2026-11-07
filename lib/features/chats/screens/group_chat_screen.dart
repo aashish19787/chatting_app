@@ -175,6 +175,81 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     });
   }
 
+  Widget _reactionPicker(BuildContext sheetContext, MessageModel message) {
+    const emojis = ['❤️', '😂', '😮', '😢', '👍'];
+    final mine = message.reactions[_myUid];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          for (final e in emojis)
+            InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _firestoreService.setReaction(
+                  widget.chatId,
+                  message.id,
+                  _myUid,
+                  mine == e ? null : e,
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: mine == e
+                      ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                      : null,
+                ),
+                child: Text(e, style: const TextStyle(fontSize: 28)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  /// Shows the reactions under a bubble.
+  Widget _withReactions(MessageModel m, bool isMe, Widget bubble) {
+    if (m.deleted || m.reactions.isEmpty) return bubble;
+
+    final counts = <String, int>{};
+    for (final e in m.reactions.values) {
+      counts[e] = (counts[e] ?? 0) + 1;
+    }
+    final cs = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: isMe
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        bubble,
+        Transform.translate(
+          offset: const Offset(0, -8),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: cs.surface, width: 2),
+            ),
+            child: Text(
+              counts.entries
+                  .map((e) => e.value > 1 ? '${e.key} ${e.value}' : e.key)
+                  .join(' '),
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showMessageMenu(MessageModel message, bool isNewest) {
     final isMe = message.senderId == _myUid;
 
@@ -184,6 +259,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (!message.deleted) _reactionPicker(sheetContext, message),
             ListTile(
               leading: const Icon(Icons.visibility_off_outlined),
               title: const Text('Delete for me'),
@@ -368,156 +444,160 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     final textColor = isMe ? Colors.white : cs.onSurface;
     final showImage = message.hasImage && !message.deleted;
 
-    return Align(
-      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: GestureDetector(
-        onLongPress: () => _showMessageMenu(message, isNewest),
-        child: Container(
-          constraints: BoxConstraints(
-            maxWidth: MediaQuery.of(context).size.width * 0.78,
-          ),
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: showImage
-              ? const EdgeInsets.all(4)
-              : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: isMe
-                ? null
-                : Theme.of(context).colorScheme.surfaceContainerHigh,
-            gradient: isMe
-                ? const LinearGradient(
-                    colors: [_primary, _secondary],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(18),
-              topRight: const Radius.circular(18),
-              bottomLeft: Radius.circular(isMe ? 18 : 4),
-              bottomRight: Radius.circular(isMe ? 4 : 18),
+    return _withReactions(
+      message,
+      isMe,
+      Align(
+        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+        child: GestureDetector(
+          onLongPress: () => _showMessageMenu(message, isNewest),
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.78,
             ),
-            border: isMe
-                ? null
-                : Border.all(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                  ),
-          ),
-          child: Column(
-            crossAxisAlignment: isMe
-                ? CrossAxisAlignment.end
-                : CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Sender name (only for other people)
-              if (!isMe)
-                Padding(
-                  padding: EdgeInsets.only(
-                    bottom: 3,
-                    left: showImage ? 8 : 0,
-                    top: showImage ? 4 : 0,
-                  ),
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            UserProfileScreen(uid: message.senderId),
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: showImage
+                ? const EdgeInsets.all(4)
+                : const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isMe
+                  ? null
+                  : Theme.of(context).colorScheme.surfaceContainerHigh,
+              gradient: isMe
+                  ? const LinearGradient(
+                      colors: [_primary, _secondary],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(18),
+                topRight: const Radius.circular(18),
+                bottomLeft: Radius.circular(isMe ? 18 : 4),
+                bottomRight: Radius.circular(isMe ? 4 : 18),
+              ),
+              border: isMe
+                  ? null
+                  : Border.all(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+            ),
+            child: Column(
+              crossAxisAlignment: isMe
+                  ? CrossAxisAlignment.end
+                  : CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Sender name (only for other people)
+                if (!isMe)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      bottom: 3,
+                      left: showImage ? 8 : 0,
+                      top: showImage ? 4 : 0,
+                    ),
+                    child: GestureDetector(
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              UserProfileScreen(uid: message.senderId),
+                        ),
+                      ),
+                      child: Text(
+                        _nameOf(message.senderId),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: _nameColor(message.senderId),
+                        ),
                       ),
                     ),
-                    child: Text(
-                      _nameOf(message.senderId),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: _nameColor(message.senderId),
-                      ),
-                    ),
                   ),
-                ),
 
-              if (message.hasReply && !message.deleted)
-                Padding(
-                  padding: showImage
-                      ? const EdgeInsets.fromLTRB(6, 6, 6, 0)
-                      : EdgeInsets.zero,
-                  child: _buildReplyQuote(message, isMe, textColor),
-                ),
+                if (message.hasReply && !message.deleted)
+                  Padding(
+                    padding: showImage
+                        ? const EdgeInsets.fromLTRB(6, 6, 6, 0)
+                        : EdgeInsets.zero,
+                    child: _buildReplyQuote(message, isMe, textColor),
+                  ),
 
-              if (message.deleted)
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.block_rounded,
-                      size: 14,
-                      color: textColor.withValues(alpha: 0.6),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      'This message was deleted',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                        color: textColor.withValues(alpha: 0.7),
+                if (message.deleted)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.block_rounded,
+                        size: 14,
+                        color: textColor.withValues(alpha: 0.6),
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'This message was deleted',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontStyle: FontStyle.italic,
+                          color: textColor.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
 
-              if (showImage)
-                GestureDetector(
-                  onTap: () => _openImage(message.imageUrl),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Image.network(
-                      message.imageUrl,
-                      width: 240,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (context, child, progress) {
-                        if (progress == null) return child;
-                        return const SizedBox(
-                          width: 240,
-                          height: 180,
-                          child: Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        );
-                      },
-                      errorBuilder: (_, _, _) => const SizedBox(
+                if (showImage)
+                  GestureDetector(
+                    onTap: () => _openImage(message.imageUrl),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.network(
+                        message.imageUrl,
                         width: 240,
-                        height: 120,
-                        child: Center(
-                          child: Icon(
-                            Icons.broken_image_outlined,
-                            color: Color(0xFF94A3B8),
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, progress) {
+                          if (progress == null) return child;
+                          return const SizedBox(
+                            width: 240,
+                            height: 180,
+                            child: Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
+                        },
+                        errorBuilder: (_, _, _) => const SizedBox(
+                          width: 240,
+                          height: 120,
+                          child: Center(
+                            child: Icon(
+                              Icons.broken_image_outlined,
+                              color: Color(0xFF94A3B8),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-              if (!message.deleted && message.text.isNotEmpty)
-                Text(
-                  message.text,
-                  style: TextStyle(fontSize: 15, color: textColor),
-                ),
+                if (!message.deleted && message.text.isNotEmpty)
+                  Text(
+                    message.text,
+                    style: TextStyle(fontSize: 15, color: textColor),
+                  ),
 
-              Padding(
-                padding: EdgeInsets.only(
-                  top: 3,
-                  right: showImage ? 8 : 0,
-                  bottom: showImage ? 4 : 0,
-                ),
-                child: Text(
-                  _formatTime(message.createdAt),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isMe ? Colors.white70 : const Color(0xFF94A3B8),
+                Padding(
+                  padding: EdgeInsets.only(
+                    top: 3,
+                    right: showImage ? 8 : 0,
+                    bottom: showImage ? 4 : 0,
+                  ),
+                  child: Text(
+                    _formatTime(message.createdAt),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isMe ? Colors.white70 : const Color(0xFF94A3B8),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

@@ -6,23 +6,20 @@ class ChatModel {
   final String lastMessage;
   final DateTime lastMessageTime;
   final String lastSenderId;
-
-  /// How many unread messages each user has, e.g. {uidA: 0, uidB: 3}
   final Map<String, int> unreadCount;
-
-  /// When each user last opened this chat.
   final Map<String, DateTime> lastRead;
-
-  /// When each user last pressed a key in this chat.
   final Map<String, DateTime> typingAt;
-
-  /// Group chat info.
   final bool isGroup;
   final String groupName;
   final String createdBy;
+  final String groupPhoto;
 
   /// Message IDs each user hid with "Delete for me".
   final Map<String, List<String>> hidden;
+
+  /// uid -> true, for people who pinned / muted this chat.
+  final Map<String, bool> pinned;
+  final Map<String, bool> muted;
 
   ChatModel({
     required this.id,
@@ -36,14 +33,27 @@ class ChatModel {
     this.isGroup = false,
     this.groupName = '',
     this.createdBy = '',
+    this.groupPhoto = '',
     this.hidden = const {},
+    this.pinned = const {},
+    this.muted = const {},
   });
 
-  static Map<String, DateTime> _readTimes(dynamic raw) {
+  static Map<String, DateTime> _times(dynamic raw) {
     final result = <String, DateTime>{};
     if (raw is Map) {
       raw.forEach((key, value) {
         if (value is Timestamp) result[key.toString()] = value.toDate();
+      });
+    }
+    return result;
+  }
+
+  static Map<String, bool> _flags(dynamic raw) {
+    final result = <String, bool>{};
+    if (raw is Map) {
+      raw.forEach((key, value) {
+        if (value == true) result[key.toString()] = true;
       });
     }
     return result;
@@ -58,6 +68,8 @@ class ChatModel {
       });
     }
 
+    final rawHidden = map['hidden'];
+
     return ChatModel(
       id: id,
       participants: List<String>.from(map['participants'] ?? []),
@@ -66,20 +78,21 @@ class ChatModel {
           (map['lastMessageTime'] as Timestamp?)?.toDate() ?? DateTime.now(),
       lastSenderId: map['lastSenderId'] ?? '',
       unreadCount: unread,
-      lastRead: _readTimes(map['lastRead']),
-      typingAt: _readTimes(map['typingAt']),
+      lastRead: _times(map['lastRead']),
+      typingAt: _times(map['typingAt']),
       isGroup: map['isGroup'] ?? false,
       groupName: map['groupName'] ?? '',
       createdBy: map['createdBy'] ?? '',
-      hidden: map['hidden'] is Map
-          ? (map['hidden'] as Map).map(
+      groupPhoto: map['groupPhoto'] ?? '',
+      hidden: rawHidden is Map
+          ? rawHidden.map(
               (k, v) => MapEntry(k.toString(), List<String>.from(v as List)),
             )
           : const {},
+      pinned: _flags(map['pinned']),
+      muted: _flags(map['muted']),
     );
   }
-
-  List<String> hiddenFor(String uid) => hidden[uid] ?? const [];
 
   String otherUserId(String myUid) {
     return participants.firstWhere((id) => id != myUid, orElse: () => '');
@@ -87,10 +100,13 @@ class ChatModel {
 
   int unreadFor(String uid) => unreadCount[uid] ?? 0;
 
-  /// True if this user typed something in the last 6 seconds.
   bool isTyping(String uid) {
     final time = typingAt[uid];
     if (time == null) return false;
     return DateTime.now().difference(time) < const Duration(seconds: 6);
   }
+
+  List<String> hiddenFor(String uid) => hidden[uid] ?? const [];
+  bool isPinnedFor(String uid) => pinned[uid] ?? false;
+  bool isMutedFor(String uid) => muted[uid] ?? false;
 }

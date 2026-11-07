@@ -4,16 +4,15 @@ class MessageModel {
   final String id;
   final String senderId;
   final String text;
-  final String imageUrl; // empty = text-only message
+  final String imageUrl;
   final DateTime createdAt;
-
-  // Reply info (empty = not a reply)
   final String replyToId;
   final String replyToText;
   final String replyToSenderId;
-
-  // true = the sender deleted this message
   final bool deleted;
+
+  /// uid -> emoji
+  final Map<String, String> reactions;
 
   MessageModel({
     required this.id,
@@ -25,6 +24,7 @@ class MessageModel {
     this.replyToText = '',
     this.replyToSenderId = '',
     this.deleted = false,
+    this.reactions = const {},
   });
 
   bool get hasImage => imageUrl.isNotEmpty;
@@ -44,6 +44,7 @@ class MessageModel {
   }
 
   factory MessageModel.fromMap(String id, Map<String, dynamic> map) {
+    final raw = map['reactions'];
     return MessageModel(
       id: id,
       senderId: map['senderId'] ?? '',
@@ -54,6 +55,9 @@ class MessageModel {
       replyToText: map['replyToText'] ?? '',
       replyToSenderId: map['replyToSenderId'] ?? '',
       deleted: map['deleted'] ?? false,
+      reactions: raw is Map
+          ? raw.map((k, v) => MapEntry(k.toString(), v.toString()))
+          : const {},
     );
   }
 }
