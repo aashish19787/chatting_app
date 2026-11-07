@@ -1,3 +1,4 @@
+import '../../profile/screens/user_profile_screen.dart';
 import 'add_members_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -90,7 +91,7 @@ class GroupInfoScreen extends StatelessWidget {
                     gradient: const LinearGradient(
                       colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
                     ),
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(45),
                   ),
                   child: const Icon(
                     Icons.groups_rounded,
@@ -156,6 +157,11 @@ class GroupInfoScreen extends StatelessWidget {
                       ),
                       title: Text(uid == myUid ? '$name (You)' : name),
                       subtitle: Text(user?.email ?? ''),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => UserProfileScreen(uid: uid),
+                        ),
+                      ),
                       trailing: uid == chat.createdBy
                           ? const Text(
                               'Creator',

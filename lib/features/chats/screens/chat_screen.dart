@@ -1,3 +1,5 @@
+import '../../profile/screens/user_profile_screen.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -614,46 +616,53 @@ class _ChatScreenState extends State<ChatScreen> {
                 final isTyping =
                     chatSnapshot.data?.isTyping(other.uid) ?? false;
 
-                return Row(
-                  children: [
-                    UserAvatar(
-                      name: user.name,
-                      photoBase64: user.photoBase64,
-                      size: 38,
+                return InkWell(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => UserProfileScreen(uid: other.uid),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            user.name,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
-                            ),
-                          ),
-                          Text(
-                            isTyping ? 'typing...' : _statusText(user),
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontStyle: isTyping
-                                  ? FontStyle.italic
-                                  : FontStyle.normal,
-                              color: isTyping
-                                  ? _primary
-                                  : user.isActive
-                                  ? const Color(0xFF22C55E)
-                                  : const Color(0xFF94A3B8),
-                            ),
-                          ),
-                        ],
+                  ),
+                  child: Row(
+                    children: [
+                      UserAvatar(
+                        name: user.name,
+                        photoBase64: user.photoBase64,
+                        size: 38,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user.name,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              isTyping ? 'typing...' : _statusText(user),
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontStyle: isTyping
+                                    ? FontStyle.italic
+                                    : FontStyle.normal,
+                                color: isTyping
+                                    ? _primary
+                                    : user.isActive
+                                    ? const Color(0xFF22C55E)
+                                    : const Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 );
               },
             );

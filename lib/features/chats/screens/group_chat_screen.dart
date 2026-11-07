@@ -1,3 +1,4 @@
+import '../../profile/screens/user_profile_screen.dart';
 import 'group_info_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -416,12 +417,20 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     left: showImage ? 8 : 0,
                     top: showImage ? 4 : 0,
                   ),
-                  child: Text(
-                    _nameOf(message.senderId),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: _nameColor(message.senderId),
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            UserProfileScreen(uid: message.senderId),
+                      ),
+                    ),
+                    child: Text(
+                      _nameOf(message.senderId),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: _nameColor(message.senderId),
+                      ),
                     ),
                   ),
                 ),
@@ -563,7 +572,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       width: 38,
       decoration: BoxDecoration(
         gradient: const LinearGradient(colors: [_primary, _secondary]),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(19),
       ),
       child: const Icon(Icons.groups_rounded, color: Colors.white, size: 22),
     );

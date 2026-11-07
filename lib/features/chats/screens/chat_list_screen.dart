@@ -1,21 +1,20 @@
-import '../widgets/group_tile.dart';
-import 'new_group_screen.dart';
-import '../../../core/theme/theme_controller.dart';
+import '../widgets/active_now_strip.dart';
 
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../common/widgets/user_avatar.dart';
 import '../../../models/chat_model.dart';
 import '../../../models/user_model.dart';
 import '../../../services/firebase_auth_service.dart';
 import '../../../services/firestore_service.dart';
-import '../../../common/widgets/user_avatar.dart';
 import '../../../services/notification_service.dart';
-
 import '../../contacts/screens/search_screen.dart';
-import '../../profile/screens/user_profile_screen.dart';
+import '../widgets/group_tile.dart';
 import 'chat_screen.dart';
+
+enum ChatFilter { all, unread, groups }
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -26,14 +25,23 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen>
     with WidgetsBindingObserver {
+  static const _primary = Color(0xFF6366F1);
+
   final _firestoreService = FirestoreService();
   final _authService = FirebaseAuthService();
+  final _searchController = TextEditingController();
 
   Timer? _heartbeat;
-
   StreamSubscription<List<ChatModel>>? _chatSub;
   final Map<String, DateTime> _knownTimes = {};
   bool _firstChatEvent = true;
+
+  ChatFilter _filter = ChatFilter.all;
+  String _query = '';
+
+  // Names of the people in 1-to-1 chats (used by the search bar).
+  final Map<String, UserModel> _users = {};
+  final Set<String> _requested = {};
 
   @override
   void initState() {
@@ -52,48 +60,12 @@ class _ChatListScreenState extends State<ChatListScreen>
     _listenForNewMessages(user.uid);
   }
 
-  /// Shows a notification when another person sends a new message.
-  void _listenForNewMessages(String myUid) {
-    _chatSub = _firestoreService.chatsStream(myUid).listen((chats) async {
-      // The first batch is just the existing chats.
-      // Remember them, but don't notify about old messages.
-      if (_firstChatEvent) {
-        _firstChatEvent = false;
-
-        for (final chat in chats) {
-          _knownTimes[chat.id] = chat.lastMessageTime;
-        }
-
-        return;
-      }
-
-      for (final chat in chats) {
-        final previous = _knownTimes[chat.id];
-        _knownTimes[chat.id] = chat.lastMessageTime;
-
-        final isNew =
-            previous == null || chat.lastMessageTime.isAfter(previous);
-
-        if (!isNew) continue;
-        if (chat.lastSenderId == myUid) continue;
-        if (NotificationService.instance.activeChatId == chat.id) continue;
-
-        final sender = await _firestoreService.getUser(chat.lastSenderId);
-
-        await NotificationService.instance.showMessage(
-          chatId: chat.id,
-          title: sender?.name ?? 'New message',
-          body: chat.lastMessage,
-        );
-      }
-    });
-  }
-
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _heartbeat?.cancel();
     _chatSub?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -113,80 +85,223 @@ class _ChatListScreenState extends State<ChatListScreen>
 
     _firestoreService.setOnlineStatus(uid, true);
 
-    // Refresh "last seen" every minute while the app is open.
     _heartbeat?.cancel();
-
     _heartbeat = Timer.periodic(const Duration(seconds: 60), (_) {
       final id = _authService.currentUser?.uid;
-
-      if (id != null) {
-        _firestoreService.setOnlineStatus(id, true);
-      }
+      if (id != null) _firestoreService.setOnlineStatus(id, true);
     });
   }
 
   Future<void> _goOffline() async {
     _heartbeat?.cancel();
-
     final uid = _authService.currentUser?.uid;
-
     if (uid != null) {
       await _firestoreService.setOnlineStatus(uid, false);
     }
   }
 
-  Future<void> _logout() async {
-    // Must happen BEFORE signing out, because the write needs a login.
-    await _goOffline();
-    await _authService.logout();
+  /// Shows a banner when another person sends a new message.
+  void _listenForNewMessages(String myUid) {
+    _chatSub = _firestoreService.chatsStream(myUid).listen((chats) async {
+      if (_firstChatEvent) {
+        _firstChatEvent = false;
+        for (final chat in chats) {
+          _knownTimes[chat.id] = chat.lastMessageTime;
+        }
+        return;
+      }
+
+      for (final chat in chats) {
+        final previous = _knownTimes[chat.id];
+        _knownTimes[chat.id] = chat.lastMessageTime;
+
+        final isNew =
+            previous == null || chat.lastMessageTime.isAfter(previous);
+        if (!isNew) continue;
+        if (chat.lastSenderId == myUid) continue;
+        if (NotificationService.instance.activeChatId == chat.id) continue;
+
+        final sender = await _firestoreService.getUser(chat.lastSenderId);
+        await NotificationService.instance.showMessage(
+          chatId: chat.id,
+          title: chat.isGroup
+              ? chat.groupName
+              : (sender?.name ?? 'New message'),
+          body: chat.isGroup && sender != null
+              ? '${sender.name}: ${chat.lastMessage}'
+              : chat.lastMessage,
+        );
+      }
+    });
   }
 
-  // Today -> "14:05", older -> "03/11"
+  void _loadNames(List<ChatModel> chats, String myUid) {
+    final missing = chats
+        .where((c) => !c.isGroup)
+        .map((c) => c.otherUserId(myUid))
+        .where(
+          (u) =>
+              u.isNotEmpty && !_users.containsKey(u) && !_requested.contains(u),
+        )
+        .toList();
+    if (missing.isEmpty) return;
+    _requested.addAll(missing);
+    _firestoreService.getUsers(missing).then((found) {
+      if (!mounted) return;
+      setState(() => _users.addAll(found));
+    });
+  }
+
   String _formatTime(DateTime time) {
     final now = DateTime.now();
-
     final isToday =
         time.year == now.year && time.month == now.month && time.day == now.day;
 
     if (isToday) {
       final h = time.hour.toString().padLeft(2, '0');
       final m = time.minute.toString().padLeft(2, '0');
-
       return '$h:$m';
     }
-
     final d = time.day.toString().padLeft(2, '0');
     final mo = time.month.toString().padLeft(2, '0');
-
     return '$d/$mo';
   }
 
-  Widget _buildEmpty() {
+  bool _matchesQuery(ChatModel chat, String myUid) {
+    final q = _query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    if (chat.isGroup) return chat.groupName.toLowerCase().contains(q);
+    final name = _users[chat.otherUserId(myUid)]?.name.toLowerCase() ?? '';
+    return name.contains(q);
+  }
+
+  List<ChatModel> _applyFilters(List<ChatModel> chats, String myUid) {
+    return chats.where((c) {
+      switch (_filter) {
+        case ChatFilter.unread:
+          if (c.unreadFor(myUid) == 0) return false;
+          break;
+        case ChatFilter.groups:
+          if (!c.isGroup) return false;
+          break;
+        case ChatFilter.all:
+          break;
+      }
+      return _matchesQuery(c, myUid);
+    }).toList();
+  }
+
+  Widget _buildSearchBar() {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: TextField(
+        controller: _searchController,
+        onChanged: (v) => setState(() => _query = v),
+        decoration: InputDecoration(
+          hintText: 'Search',
+          prefixIcon: const Icon(Icons.search_rounded),
+          suffixIcon: _query.isEmpty
+              ? null
+              : IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _query = '');
+                  },
+                ),
+          filled: true,
+          fillColor: cs.surfaceContainerHighest,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(26),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String label, ChatFilter value) {
+    final selected = _filter == value;
+    final cs = Theme.of(context).colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        showCheckmark: false,
+        onSelected: (_) => setState(() => _filter = value),
+        selectedColor: _primary.withValues(alpha: 0.18),
+        backgroundColor: cs.surfaceContainerHighest,
+        side: BorderSide.none,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        labelStyle: TextStyle(
+          fontWeight: FontWeight.w600,
+          color: selected ? _primary : cs.onSurface,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilters(int unreadCount) {
+    return SizedBox(
+      height: 44,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        children: [
+          _chip('All', ChatFilter.all),
+          _chip(
+            unreadCount > 0 ? 'Unread ($unreadCount)' : 'Unread',
+            ChatFilter.unread,
+          ),
+          _chip('Groups', ChatFilter.groups),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmpty(bool noChatsAtAll) {
+    String title;
+    String subtitle;
+
+    if (noChatsAtAll) {
+      title = 'No conversations yet';
+      subtitle = 'Tap the button below to find people and start chatting.';
+    } else if (_query.trim().isNotEmpty) {
+      title = 'No results';
+      subtitle = 'Nothing matches "${_query.trim()}".';
+    } else if (_filter == ChatFilter.unread) {
+      title = 'All caught up';
+      subtitle = 'You have no unread chats.';
+    } else {
+      title = 'No groups yet';
+      subtitle = 'Create one from the Menu tab.';
+    }
+
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(30),
+        padding: const EdgeInsets.all(30),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.chat_bubble_outline_rounded,
               size: 56,
               color: Color(0xFF94A3B8),
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              'No conversations yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              title,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8),
+            const SizedBox(height: 8),
             Text(
-              'Tap the button below to find people and start chatting.',
+              subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
             ),
           ],
         ),
@@ -196,62 +311,20 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF6366F1);
     final myUid = _authService.currentUser?.uid ?? '';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Chats',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
-        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.group_add_rounded, color: Color(0xFF64748B)),
-            tooltip: 'New group',
-            onPressed: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (_) => const NewGroupScreen()));
-            },
-          ),
-          IconButton(
-            icon: Icon(
-              Theme.of(context).brightness == Brightness.dark
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
-              color: const Color(0xFF64748B),
-            ),
-            tooltip: 'Dark mode',
-            onPressed: ThemeController.instance.toggle,
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_rounded, color: Color(0xFF64748B)),
-            tooltip: 'My profile',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => UserProfileScreen(uid: myUid),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Color(0xFF64748B)),
-            tooltip: 'Log out',
-            onPressed: _logout,
-          ),
-        ],
+        title: const Text(
+          'Chat App',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: primaryColor,
+        backgroundColor: _primary,
         foregroundColor: Colors.white,
-        tooltip: 'Find people',
         onPressed: () {
           Navigator.of(context)
               .push(MaterialPageRoute(builder: (_) => const SearchScreen()));
@@ -272,36 +345,58 @@ class _ChatListScreenState extends State<ChatListScreen>
 
           if (!snapshot.hasData) {
             return const Center(
-              child: CircularProgressIndicator(color: primaryColor),
+              child: CircularProgressIndicator(color: _primary),
             );
           }
 
-          final chats = snapshot.data!;
+          final all = snapshot.data!;
+          _loadNames(all, myUid);
 
-          if (chats.isEmpty) return _buildEmpty();
+          final unreadCount = all.where((c) => c.unreadFor(myUid) > 0).length;
+          final chats = _applyFilters(all, myUid);
 
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 90),
-            itemCount: chats.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final chat = chats[index];
-
-              if (chat.isGroup) {
-                return GroupTile(
-                  chat: chat,
+          return Column(
+            children: [
+              _buildSearchBar(),
+              if (_query.trim().isEmpty)
+                ActiveNowStrip(
                   myUid: myUid,
-                  timeText: _formatTime(chat.lastMessageTime),
-                  firestoreService: _firestoreService,
-                );
-              }
-              return _ChatTile(
-                chat: chat,
-                myUid: myUid,
-                timeText: _formatTime(chat.lastMessageTime),
-                firestoreService: _firestoreService,
-              );
-            },
+                  partnerUids: all
+                      .where((c) => !c.isGroup)
+                      .map((c) => c.otherUserId(myUid))
+                      .toList(),
+                ),
+              _buildFilters(unreadCount),
+              const SizedBox(height: 4),
+              Expanded(
+                child: chats.isEmpty
+                    ? _buildEmpty(all.isEmpty)
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(12, 4, 12, 90),
+                        itemCount: chats.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 2),
+                        itemBuilder: (context, index) {
+                          final chat = chats[index];
+                          final time = _formatTime(chat.lastMessageTime);
+
+                          if (chat.isGroup) {
+                            return GroupTile(
+                              chat: chat,
+                              myUid: myUid,
+                              timeText: time,
+                              firestoreService: _firestoreService,
+                            );
+                          }
+                          return _ChatTile(
+                            chat: chat,
+                            myUid: myUid,
+                            timeText: time,
+                            firestoreService: _firestoreService,
+                          );
+                        },
+                      ),
+              ),
+            ],
           );
         },
       ),
@@ -309,8 +404,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   }
 }
 
-/// One row in the chat list. It loads the other person's profile live,
-/// so name changes, profile pictures and online status update automatically.
+/// One 1-to-1 row. Loads the other person live (name, photo, online dot).
 class _ChatTile extends StatelessWidget {
   final ChatModel chat;
   final String myUid;
@@ -326,6 +420,7 @@ class _ChatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final otherUid = chat.otherUserId(myUid);
     final unread = chat.unreadFor(myUid);
     final hasUnread = unread > 0;
@@ -336,14 +431,12 @@ class _ChatTile extends StatelessWidget {
         final other = snapshot.data;
         final name = other?.name ?? 'Loading...';
         final isOnline = other?.isActive ?? false;
-
         final preview = chat.lastSenderId == myUid
             ? 'You: ${chat.lastMessage}'
             : chat.lastMessage;
 
         return Material(
-          color: Theme.of(context).colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: other == null
@@ -355,19 +448,10 @@ class _ChatTile extends StatelessWidget {
                       ),
                     );
                   },
-            child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: hasUnread
-                      ? const Color(0xFF6366F1)
-                      : Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               child: Row(
                 children: [
-                  // Profile picture with a green dot when online.
                   Stack(
                     children: [
                       UserAvatar(
@@ -377,23 +461,21 @@ class _ChatTile extends StatelessWidget {
                       ),
                       if (isOnline)
                         Positioned(
-                          right: 0,
-                          bottom: 0,
+                          right: 1,
+                          bottom: 1,
                           child: Container(
                             height: 14,
                             width: 14,
                             decoration: BoxDecoration(
                               color: const Color(0xFF22C55E),
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(color: cs.surface, width: 2),
                             ),
                           ),
                         ),
                     ],
                   ),
-
                   const SizedBox(width: 14),
-
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -402,10 +484,9 @@ class _ChatTile extends StatelessWidget {
                           name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
-                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                         const SizedBox(height: 3),
@@ -419,16 +500,14 @@ class _ChatTile extends StatelessWidget {
                                 ? FontWeight.bold
                                 : FontWeight.normal,
                             color: hasUnread
-                                ? Theme.of(context).colorScheme.onSurface
+                                ? cs.onSurface
                                 : const Color(0xFF64748B),
                           ),
                         ),
                       ],
                     ),
                   ),
-
                   const SizedBox(width: 10),
-
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [

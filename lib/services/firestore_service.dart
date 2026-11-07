@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/chat_model.dart';
 import '../models/message_model.dart';
+import '../models/notification_model.dart';
+import '../models/post_model.dart';
 import '../models/user_model.dart';
 
 class FirestoreService {
@@ -345,6 +347,14 @@ class FirestoreService {
     batch.set(_users.doc(targetUid).collection('followers').doc(myUid), data);
     batch.set(_users.doc(myUid).collection('following').doc(targetUid), data);
     await batch.commit();
+    await _notify(targetUid, 'follow_$myUid', {
+      'type': 'follow',
+      'fromId': myUid,
+      'postId': '',
+      'postImageUrl': '',
+      'createdAt': FieldValue.serverTimestamp(),
+      'read': false,
+    });
   }
 
   Future<void> unfollow(String myUid, String targetUid) async {
@@ -352,5 +362,154 @@ class FirestoreService {
     batch.delete(_users.doc(targetUid).collection('followers').doc(myUid));
     batch.delete(_users.doc(myUid).collection('following').doc(targetUid));
     await batch.commit();
+    await _removeNotification(targetUid, 'follow_$myUid');
+  }
+
+  // ---------------------------------------------------------------
+  // POSTS
+  // ---------------------------------------------------------------
+
+  CollectionReference<Map<String, dynamic>> get _posts =>
+      _db.collection('posts');
+
+  Future<void> createPost({
+    required String authorId,
+    required String imageUrl,
+    required String caption,
+  }) async {
+    await _posts.add({
+      'authorId': authorId,
+      'imageUrl': imageUrl,
+      'caption': caption.trim(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'likedBy': <String>[],
+    });
+  }
+
+  /// A user's posts, newest first (sorted here so no index is needed).
+  Stream<List<PostModel>> userPostsStream(String uid) {
+    return _posts.where('authorId', isEqualTo: uid).snapshots().map((s) {
+      final posts = s.docs
+          .map((d) => PostModel.fromMap(d.id, d.data()))
+          .toList();
+      posts.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return posts;
+    });
+  }
+
+  Stream<PostModel?> postStream(String postId) {
+    return _posts.doc(postId).snapshots().map((d) {
+      if (!d.exists || d.data() == null) return null;
+      return PostModel.fromMap(d.id, d.data()!);
+    });
+  }
+
+  Future<void> setLike(String postId, String myUid, bool like) async {
+    await _posts.doc(postId).update({
+      'likedBy': like
+          ? FieldValue.arrayUnion([myUid])
+          : FieldValue.arrayRemove([myUid]),
+    });
+  }
+
+  Future<void> deletePost(String postId) async {
+    await _posts.doc(postId).delete();
+  }
+
+  // ---------------------------------------------------------------
+  // NOTIFICATIONS
+  // ---------------------------------------------------------------
+
+  CollectionReference<Map<String, dynamic>> _notifications(String uid) =>
+      _users.doc(uid).collection('notifications');
+
+  Future<void> _notify(
+    String toUid,
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      await _notifications(toUid).doc(id).set(data);
+    } catch (_) {
+      // Not critical (for example, it already exists).
+    }
+  }
+
+  Future<void> _removeNotification(String toUid, String id) async {
+    try {
+      await _notifications(toUid).doc(id).delete();
+    } catch (_) {
+      // Not critical.
+    }
+  }
+
+  /// Like or unlike a post, and notify the author.
+  Future<void> setPostLike(PostModel post, String myUid, bool like) async {
+    await setLike(post.id, myUid, like);
+    if (post.authorId == myUid) return;
+
+    final id = 'like_${post.id}_$myUid';
+    if (like) {
+      await _notify(post.authorId, id, {
+        'type': 'like',
+        'fromId': myUid,
+        'postId': post.id,
+        'postImageUrl': post.imageUrl,
+        'createdAt': FieldValue.serverTimestamp(),
+        'read': false,
+      });
+    } else {
+      await _removeNotification(post.authorId, id);
+    }
+  }
+
+  Stream<List<NotificationModel>> notificationsStream(String uid) {
+    return _notifications(uid)
+        .orderBy('createdAt', descending: true)
+        .limit(100)
+        .snapshots()
+        .map(
+          (s) => s.docs
+              .map((d) => NotificationModel.fromMap(d.id, d.data()))
+              .toList(),
+        );
+  }
+
+  Stream<int> unreadNotificationsCount(String uid) {
+    return _notifications(uid)
+        .where('read', isEqualTo: false)
+        .snapshots()
+        .map((s) => s.docs.length);
+  }
+
+  Future<void> markAllNotificationsRead(String uid) async {
+    try {
+      final unread = await _notifications(uid)
+          .where('read', isEqualTo: false)
+          .get();
+      if (unread.docs.isEmpty) return;
+      final batch = _db.batch();
+      for (final doc in unread.docs) {
+        batch.update(doc.reference, {'read': true});
+      }
+      await batch.commit();
+    } catch (_) {
+      // Not critical.
+    }
+  }
+
+  // ---------------------------------------------------------------
+  // NOTES
+  // ---------------------------------------------------------------
+
+  Future<void> setNote(String uid, String text) async {
+    await _users.doc(uid).update({
+      'note': text.trim(),
+      'noteAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> deleteNote(String uid) async {
+    await _users.doc(uid).update({'note': '', 'noteAt': FieldValue.delete()});
   }
 }

@@ -16,7 +16,7 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(size * 0.32);
+    final radius = BorderRadius.circular(size / 2);
 
     if (photoBase64.isNotEmpty) {
       try {

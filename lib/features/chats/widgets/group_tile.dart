@@ -38,7 +38,7 @@ class GroupTile extends StatelessWidget {
             : '$who: ${chat.lastMessage}';
 
         return Material(
-          color: cs.surface,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
@@ -53,15 +53,7 @@ class GroupTile extends StatelessWidget {
               );
             },
             child: Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: hasUnread
-                      ? const Color(0xFF6366F1)
-                      : Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               child: Row(
                 children: [
                   Container(
@@ -73,7 +65,7 @@ class GroupTile extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(17),
+                      borderRadius: BorderRadius.circular(26),
                     ),
                     child: const Icon(
                       Icons.groups_rounded,

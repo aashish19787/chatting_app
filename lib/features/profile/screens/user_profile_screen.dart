@@ -1,3 +1,5 @@
+import '../widgets/posts_grid.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../common/widgets/user_avatar.dart';
@@ -305,6 +307,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                           ],
                         ),
+                      const SizedBox(height: 20),
+                      const Divider(height: 1),
+                      const SizedBox(height: 12),
+                      PostsGrid(uid: widget.uid),
                     ],
                   );
                 },

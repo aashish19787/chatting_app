@@ -7,6 +7,8 @@ class UserModel {
   final String photoUrl;
   final String photoBase64;
   final String bio;
+  final String note;
+  final DateTime? noteAt;
   final DateTime createdAt;
   final bool isOnline;
   final DateTime? lastSeen;
@@ -19,6 +21,8 @@ class UserModel {
     required this.createdAt,
     this.photoBase64 = '',
     this.bio = '',
+    this.note = '',
+    this.noteAt,
     this.isOnline = false,
     this.lastSeen,
   });
@@ -30,6 +34,8 @@ class UserModel {
     String? photoUrl,
     String? photoBase64,
     String? bio,
+    String? note,
+    DateTime? noteAt,
     DateTime? createdAt,
     bool? isOnline,
     DateTime? lastSeen,
@@ -41,6 +47,8 @@ class UserModel {
       photoUrl: photoUrl ?? this.photoUrl,
       photoBase64: photoBase64 ?? this.photoBase64,
       bio: bio ?? this.bio,
+      note: note ?? this.note,
+      noteAt: noteAt ?? this.noteAt,
       createdAt: createdAt ?? this.createdAt,
       isOnline: isOnline ?? this.isOnline,
       lastSeen: lastSeen ?? this.lastSeen,
@@ -52,6 +60,13 @@ class UserModel {
     return DateTime.now().difference(lastSeen!) < const Duration(minutes: 2);
   }
 
+  /// A note is shown for 24 hours. A null time means "just written".
+  bool get hasNote {
+    if (note.isEmpty) return false;
+    if (noteAt == null) return true;
+    return DateTime.now().difference(noteAt!) < const Duration(hours: 24);
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'uid': uid,
@@ -61,6 +76,8 @@ class UserModel {
       'photoUrl': photoUrl,
       'photoBase64': photoBase64,
       'bio': bio,
+      'note': note,
+      'noteAt': noteAt == null ? null : Timestamp.fromDate(noteAt!),
       'createdAt': Timestamp.fromDate(createdAt),
       'isOnline': isOnline,
       'lastSeen': lastSeen == null
@@ -77,6 +94,8 @@ class UserModel {
       photoUrl: map['photoUrl'] ?? '',
       photoBase64: map['photoBase64'] ?? '',
       bio: map['bio'] ?? '',
+      note: map['note'] ?? '',
+      noteAt: (map['noteAt'] as Timestamp?)?.toDate(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       isOnline: map['isOnline'] ?? false,
       lastSeen: (map['lastSeen'] as Timestamp?)?.toDate(),

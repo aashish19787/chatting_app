@@ -6,7 +6,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'firebase_options.dart';
 import 'features/auth/screens/login_screen.dart';
-import 'features/chats/screens/chat_list_screen.dart';
+import 'features/home/screens/main_shell.dart';
 import 'services/firebase_auth_service.dart';
 
 void main() async {
@@ -57,7 +57,7 @@ class AuthGate extends StatelessWidget {
         }
 
         if (snapshot.hasData) {
-          return const ChatListScreen();
+          return const MainShell();
         }
 
         return const LoginScreen();
