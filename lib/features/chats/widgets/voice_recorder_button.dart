@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -41,8 +42,11 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton> {
       }
       final dir = await getTemporaryDirectory();
       final path =
-          '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      await _recorder.start(const RecordConfig(), path: path);
+          '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.wav';
+      await _recorder.start(
+        const RecordConfig(encoder: AudioEncoder.wav),
+        path: path,
+      );
       setState(() {
         _recording = true;
         _seconds = 0;
@@ -66,6 +70,7 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton> {
     try {
       final path = await _recorder.stop();
       if (path == null || seconds < 1) return;
+      debugPrint('VOICE FILE: $path size=${await File(path).length()} bytes, ${seconds}s');
       await widget.onRecorded(path, seconds);
     } catch (_) {
       widget.onError('Could not send the voice message.');

@@ -869,13 +869,15 @@ class FirestoreService {
         .collection('views')
         .orderBy('viewedAt', descending: true)
         .snapshots()
-        .map((snap) => snap.docs.map((d) {
-              final ts = d.data()['viewedAt'];
-              return <String, dynamic>{
-                'uid': d.id,
-                'viewedAt': ts is Timestamp ? ts.toDate() : null,
-              };
-            }).toList());
+        .map(
+          (snap) => snap.docs.map((d) {
+            final ts = d.data()['viewedAt'];
+            return <String, dynamic>{
+              'uid': d.id,
+              'viewedAt': ts is Timestamp ? ts.toDate() : null,
+            };
+          }).toList(),
+        );
   }
 }
 
