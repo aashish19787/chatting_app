@@ -55,12 +55,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBT23vRA4oNyNuWH7aJvOtd6d5IEhWxLPA',
-    appId: '1:6333787880:android:639274da2cb0d3f47ce35d',
+    appId: '1:6333787880:android:45a124bb34a5b4b97ce35d',
     messagingSenderId: '6333787880',
     projectId: 'chatting-app-83e60',
     storageBucket: 'chatting-app-83e60.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyDQ6h1Yi7dnqZixm58Noje82tZJ-68cWAc',
     appId: '1:6333787880:ios:e31857843ba1b42a7ce35d',
@@ -69,7 +68,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'chatting-app-83e60.firebasestorage.app',
     iosBundleId: 'com.example.chattingApp',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyDQ6h1Yi7dnqZixm58Noje82tZJ-68cWAc',
     appId: '1:6333787880:ios:e31857843ba1b42a7ce35d',

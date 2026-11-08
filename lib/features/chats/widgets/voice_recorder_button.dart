@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -70,8 +69,6 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton> {
     try {
       final path = await _recorder.stop();
       if (path == null || seconds < 1) return;
-      debugPrint(
-      );
       await widget.onRecorded(path, seconds);
     } catch (_) {
       widget.onError('Could not send the voice message.');

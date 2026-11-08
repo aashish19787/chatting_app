@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:6333787880:android:45a124bb34a5b4b97ce35d",
+        "android_client_info": {
+          "package_name": "com.aashish.chatapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBT23vRA4oNyNuWH7aJvOtd6d5IEhWxLPA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:6333787880:android:639274da2cb0d3f47ce35d",
         "android_client_info": {
           "package_name": "com.example.chatting_app"
