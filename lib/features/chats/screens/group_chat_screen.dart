@@ -1,3 +1,7 @@
+import 'message_search_screen.dart';
+
+import 'dart:async';
+
 import '../../profile/screens/user_profile_screen.dart';
 import 'group_info_screen.dart';
 
@@ -41,6 +45,13 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
   String? _lastMarkedMessageId;
   MessageModel? _replyingTo;
 
+  ChatModel? _chat;
+  DateTime? _lastTypingWrite;
+  Timer? _tick;
+  final _scroll = ScrollController();
+  int _limit = 30;
+  int _lastCount = 0;
+
   // Latest member list (from the chat document)
   List<String> _participants = [];
 
@@ -53,6 +64,17 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     super.initState();
     _myUid = _authService.currentUser!.uid;
     NotificationService.instance.activeChatId = widget.chatId;
+    _messageController.addListener(_onTextChanged);
+    _tick = Timer.periodic(const Duration(seconds: 3), (_) {
+      if (mounted) setState(() {});
+    });
+    _scroll.addListener(() {
+      if (_scroll.hasClients &&
+          _scroll.position.pixels >= _scroll.position.maxScrollExtent - 300 &&
+          _lastCount >= _limit) {
+        setState(() => _limit += 30);
+      }
+    });
   }
 
   @override
@@ -60,6 +82,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     if (NotificationService.instance.activeChatId == widget.chatId) {
       NotificationService.instance.activeChatId = null;
     }
+    _firestoreService.setTyping(widget.chatId, _myUid, false);
+    _tick?.cancel();
+    _scroll.dispose();
+    _messageController.removeListener(_onTextChanged);
     _messageController.dispose();
     super.dispose();
   }
@@ -74,6 +100,44 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       if (!mounted) return;
       setState(() => _users.addAll(found));
     });
+  }
+
+  void _onTextChanged() {
+    if (_messageController.text.isEmpty) return;
+    final now = DateTime.now();
+    final last = _lastTypingWrite;
+    if (last == null || now.difference(last) > const Duration(seconds: 3)) {
+      _lastTypingWrite = now;
+      _firestoreService.setTyping(widget.chatId, _myUid, true);
+    }
+  }
+
+  String? _typingLabel() {
+    final chat = _chat;
+    if (chat == null) return null;
+    final names = chat.participants
+        .where((u) => u != _myUid && chat.isTyping(u))
+        .map((u) => (_users[u]?.name ?? 'Someone').split(' ').first)
+        .toList();
+    if (names.isEmpty) return null;
+    if (names.length == 1) return '${names.first} is typing...';
+    if (names.length == 2) return '${names[0]} and ${names[1]} are typing...';
+    return 'Several people are typing...';
+  }
+
+  /// 0 = nobody has seen it, 1 = some people, 2 = everyone.
+  int _seenLevel(MessageModel m) {
+    final chat = _chat;
+    if (chat == null) return 0;
+    final others = chat.participants.where((u) => u != _myUid).toList();
+    if (others.isEmpty) return 0;
+    var seen = 0;
+    for (final u in others) {
+      final time = chat.lastRead[u];
+      if (time != null && !m.createdAt.isAfter(time)) seen++;
+    }
+    if (seen == 0) return 0;
+    return seen == others.length ? 2 : 1;
   }
 
   void _showError(String text) {
@@ -109,6 +173,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
     final reply = _replyingTo;
     _messageController.clear();
+    _lastTypingWrite = null;
+    _firestoreService.setTyping(widget.chatId, _myUid, false);
     setState(() {
       _isSending = true;
       _replyingTo = null;
@@ -588,12 +654,31 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     right: showImage ? 8 : 0,
                     bottom: showImage ? 4 : 0,
                   ),
-                  child: Text(
-                    _formatTime(message.createdAt),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: isMe ? Colors.white70 : const Color(0xFF94A3B8),
-                    ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _formatTime(message.createdAt),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isMe
+                              ? Colors.white70
+                              : const Color(0xFF94A3B8),
+                        ),
+                      ),
+                      if (isMe && !message.deleted) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          _seenLevel(message) == 0
+                              ? Icons.done_rounded
+                              : Icons.done_all_rounded,
+                          size: 14,
+                          color: _seenLevel(message) == 2
+                              ? const Color(0xFF7DD3FC)
+                              : Colors.white70,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
@@ -669,6 +754,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
         if (chat != null) {
           _participants = chat.participants;
+          _chat = chat;
           _ensureUsers(chat.participants);
         }
 
@@ -682,6 +768,23 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
             backgroundColor: cs.surface,
             elevation: 0,
             titleSpacing: 0,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.search_rounded),
+                tooltip: 'Search',
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => MessageSearchScreen(
+                      chatId: widget.chatId,
+                      names: {
+                        for (final e in _users.entries) e.key: e.value.name,
+                        _myUid: 'You',
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
             title: InkWell(
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(
@@ -706,7 +809,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                         ),
                         if (count != null)
                           Text(
-                            '$count members',
+                            _typingLabel() ?? '$count members',
                             style: const TextStyle(
                               fontSize: 12,
                               color: Color(0xFF94A3B8),
@@ -734,7 +837,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                   children: [
                     Expanded(
                       child: StreamBuilder<List<MessageModel>>(
-                        stream: _firestoreService.messagesStream(widget.chatId),
+                        stream: _firestoreService.messagesStream(
+                          widget.chatId,
+                          limit: _limit,
+                        ),
                         builder: (context, snapshot) {
                           if (snapshot.hasError) {
                             return const Center(
@@ -752,6 +858,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
 
                           final hidden =
                               chat?.hiddenFor(_myUid) ?? const <String>[];
+                          _lastCount = snapshot.data!.length;
                           final messages = snapshot.data!
                               .where((m) => !hidden.contains(m.id))
                               .toList();
@@ -767,6 +874,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                           _markReadIfNeeded(messages);
 
                           return ListView.builder(
+                            controller: _scroll,
                             reverse: true,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,

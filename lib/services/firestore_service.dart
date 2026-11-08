@@ -5,6 +5,7 @@ import '../models/chat_model.dart';
 import 'block_list.dart';
 import '../models/comment_model.dart';
 import '../models/message_model.dart';
+import '../models/story_model.dart';
 import '../models/notification_model.dart';
 import '../models/post_model.dart';
 import '../models/user_model.dart';
@@ -182,11 +183,12 @@ class FirestoreService {
     }
   }
 
-  Stream<List<MessageModel>> messagesStream(String chatId) {
+  Stream<List<MessageModel>> messagesStream(String chatId, {int limit = 30}) {
     return _chats
         .doc(chatId)
         .collection('messages')
         .orderBy('createdAt', descending: true)
+        .limit(limit)
         .snapshots()
         .map(
           (snapshot) => snapshot.docs
@@ -543,6 +545,7 @@ class FirestoreService {
         .doc(postId)
         .collection('comments')
         .orderBy('createdAt')
+        .limit(200)
         .snapshots()
         .map(
           (s) =>
@@ -682,6 +685,60 @@ class FirestoreService {
       'reason': reason,
       'createdAt': FieldValue.serverTimestamp(),
     });
+  }
+
+  // ---------------------------------------------------------------
+  // STORIES + TRANSFER ADMIN
+  // ---------------------------------------------------------------
+
+  Future<void> createStory(String authorId, String imageUrl) async {
+    await _db.collection('stories').add({
+      'authorId': authorId,
+      'imageUrl': imageUrl,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Stories from the last 24 hours, oldest first (at most 30 authors).
+  Stream<List<StoryModel>> storiesStream(List<String> authorIds) {
+    final ids = authorIds.take(30).toList();
+    if (ids.isEmpty) return Stream.value(const <StoryModel>[]);
+
+    return _db
+        .collection('stories')
+        .where('authorId', whereIn: ids)
+        .snapshots()
+        .map((s) {
+          final cutoff = DateTime.now().subtract(const Duration(hours: 24));
+          final list = s.docs
+              .map((d) => StoryModel.fromMap(d.id, d.data()))
+              .where((x) => x.createdAt.isAfter(cutoff))
+              .toList();
+          list.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          return list;
+        });
+  }
+
+  Future<void> deleteStory(String storyId) async {
+    await _db.collection('stories').doc(storyId).delete();
+  }
+
+  Future<void> transferAdmin(String chatId, String newAdminUid) async {
+    await _chats.doc(chatId).update({'createdBy': newAdminUid});
+  }
+
+  /// One-time load of the newest messages (used by message search).
+  Future<List<MessageModel>> fetchRecentMessages(
+    String chatId, {
+    int limit = 500,
+  }) async {
+    final s = await _chats
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('createdAt', descending: true)
+        .limit(limit)
+        .get();
+    return s.docs.map((d) => MessageModel.fromMap(d.id, d.data())).toList();
   }
 }
 

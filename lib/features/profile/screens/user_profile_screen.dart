@@ -1,3 +1,4 @@
+import '../../share/share_sheet.dart';
 import '../../../services/block_list.dart';
 import '../widgets/posts_grid.dart';
 
@@ -238,6 +239,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.ios_share_rounded),
+            tooltip: 'Share profile',
+            onPressed: () => shareProfile(context, widget.uid),
+          ),
           if (!_isMe)
             PopupMenuButton<String>(
               onSelected: _onMenu,

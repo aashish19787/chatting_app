@@ -1,3 +1,4 @@
+import '../../share/share_sheet.dart';
 import 'comments_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -162,6 +163,12 @@ class PostViewScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        ListTile(
+          dense: true,
+          leading: const Icon(Icons.ios_share_rounded),
+          title: const Text('Share'),
+          onTap: () => sharePost(context, post),
         ),
         ListTile(
           dense: true,

@@ -265,6 +265,19 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
     );
   }
 
+  void _openPerson(UserModel user) {
+    if (!user.hasNote) {
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => ChatScreen(otherUser: user)));
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _NoteReplySheet(user: user, myUid: widget.myUid),
+    );
+  }
+
   Widget _myItem() {
     final me = _me;
     final hasNote = me?.hasNote ?? false;
@@ -388,6 +401,160 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
           if (index == 0) return _myItem();
           return _personItem(people[index - 1]);
         },
+      ),
+    );
+  }
+}
+
+/// Bottom sheet: shows someone's note and lets you reply to it.
+class _NoteReplySheet extends StatefulWidget {
+  final UserModel user;
+  final String myUid;
+
+  const _NoteReplySheet({required this.user, required this.myUid});
+
+  @override
+  State<_NoteReplySheet> createState() => _NoteReplySheetState();
+}
+
+class _NoteReplySheetState extends State<_NoteReplySheet> {
+  final _controller = TextEditingController();
+  final _service = FirestoreService();
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _send() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty || _sending) return;
+
+    setState(() => _sending = true);
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    try {
+      await _service.sendMessage(
+        senderId: widget.myUid,
+        receiverId: widget.user.uid,
+        text: text,
+        replyToId: 'note_${widget.user.uid}',
+        replyToText: '📝 ${widget.user.note}',
+        replyToSenderId: widget.user.uid,
+      );
+      navigator.pop();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Reply sent'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _sending = false);
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            e is BlockedException
+                ? "You can't message this person."
+                : 'Could not send your reply.',
+          ),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final user = widget.user;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  UserAvatar(
+                    name: user.name,
+                    photoBase64: user.photoBase64,
+                    size: 44,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      user.name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(user.note, style: const TextStyle(fontSize: 16)),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _controller,
+                autofocus: true,
+                maxLength: 300,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: InputDecoration(
+                  hintText: 'Reply to ${user.name.split(' ').first}\'s note...',
+                  counterText: '',
+                  filled: true,
+                  fillColor: cs.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: _sending ? null : _send,
+                    icon: const Icon(
+                      Icons.send_rounded,
+                      color: Color(0xFF6366F1),
+                    ),
+                  ),
+                ),
+                onSubmitted: (_) => _send(),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => ChatScreen(otherUser: user),
+                      ),
+                    );
+                  },
+                  child: const Text('Open chat'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

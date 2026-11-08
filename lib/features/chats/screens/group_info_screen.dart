@@ -144,6 +144,21 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
     }
   }
 
+  Future<void> _makeAdmin(String uid, String name) async {
+    final ok = await _confirm(
+      'Make $name admin?',
+      'You will no longer be able to rename the group, change its photo or remove people.',
+      'Make admin',
+    );
+    if (!ok) return;
+    try {
+      await _service.transferAdmin(widget.chatId, uid);
+    } catch (_) {
+      if (!mounted) return;
+      _msg('Could not transfer admin.');
+    }
+  }
+
   Future<void> _leave(String myUid) async {
     final ok = await _confirm(
       'Leave group?',
@@ -323,13 +338,21 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                               ),
                             )
                           : (isAdmin && uid != myUid
-                                ? IconButton(
-                                    icon: const Icon(
-                                      Icons.person_remove_outlined,
-                                      color: Colors.redAccent,
-                                    ),
-                                    tooltip: 'Remove',
-                                    onPressed: () => _remove(uid, name),
+                                ? PopupMenuButton<String>(
+                                    onSelected: (v) {
+                                      if (v == 'admin') _makeAdmin(uid, name);
+                                      if (v == 'remove') _remove(uid, name);
+                                    },
+                                    itemBuilder: (_) => const [
+                                      PopupMenuItem(
+                                        value: 'admin',
+                                        child: Text('Make admin'),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'remove',
+                                        child: Text('Remove from group'),
+                                      ),
+                                    ],
                                   )
                                 : null),
                     );

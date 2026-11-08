@@ -1,3 +1,5 @@
+import '../../share/share_sheet.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../common/widgets/user_avatar.dart';
@@ -95,6 +97,10 @@ class PostCard extends StatelessWidget {
                     IconButton(
                       onPressed: () => _openComments(context),
                       icon: const Icon(Icons.mode_comment_outlined, size: 26),
+                    ),
+                    IconButton(
+                      onPressed: () => sharePost(context, post),
+                      icon: const Icon(Icons.ios_share_rounded, size: 25),
                     ),
                     const Spacer(),
                     Text(

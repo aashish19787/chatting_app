@@ -1,3 +1,4 @@
+import 'message_search_screen.dart';
 import '../../profile/screens/user_profile_screen.dart';
 
 import 'dart:async';
@@ -36,6 +37,9 @@ class _ChatScreenState extends State<ChatScreen> {
   late final String _chatId;
   bool _isSending = false;
   bool _isUploadingImage = false;
+  final _scroll = ScrollController();
+  int _limit = 30;
+  int _lastCount = 0;
   String? _lastMarkedMessageId;
   Timer? _statusTimer;
 
@@ -51,6 +55,13 @@ class _ChatScreenState extends State<ChatScreen> {
     _myUid = _authService.currentUser!.uid;
     _chatId = _firestoreService.getChatId(_myUid, widget.otherUser.uid);
     NotificationService.instance.activeChatId = _chatId;
+    _scroll.addListener(() {
+      if (_scroll.hasClients &&
+          _scroll.position.pixels >= _scroll.position.maxScrollExtent - 300 &&
+          _lastCount >= _limit) {
+        setState(() => _limit += 30);
+      }
+    });
 
     _messageController.addListener(_onTextChanged);
 
@@ -68,6 +79,7 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     _statusTimer?.cancel();
     _messageController.removeListener(_onTextChanged);
+    _scroll.dispose();
     _messageController.dispose();
     super.dispose();
   }
@@ -691,6 +703,20 @@ class _ChatScreenState extends State<ChatScreen> {
           color: Theme.of(context).colorScheme.onSurface,
         ),
         titleSpacing: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            tooltip: 'Search',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => MessageSearchScreen(
+                  chatId: _chatId,
+                  names: {_myUid: 'You', other.uid: other.name},
+                ),
+              ),
+            ),
+          ),
+        ],
         title: StreamBuilder<UserModel?>(
           stream: _firestoreService.userStream(other.uid),
           builder: (context, userSnapshot) {
@@ -764,7 +790,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 final otherLastRead = chatSnapshot.data?.lastRead[other.uid];
 
                 return StreamBuilder<List<MessageModel>>(
-                  stream: _firestoreService.messagesStream(_chatId),
+                  stream: _firestoreService.messagesStream(
+                    _chatId,
+                    limit: _limit,
+                  ),
                   builder: (context, snapshot) {
                     if (snapshot.hasError) {
                       return const Center(
@@ -784,6 +813,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     final hidden =
                         chatSnapshot.data?.hiddenFor(_myUid) ??
                         const <String>[];
+                    _lastCount = snapshot.data!.length;
                     final messages = snapshot.data!
                         .where((m) => !hidden.contains(m.id))
                         .toList();
@@ -823,6 +853,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     _markReadIfNeeded(messages);
 
                     return ListView.builder(
+                      controller: _scroll,
                       reverse: true,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
