@@ -27,7 +27,7 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen>
     with WidgetsBindingObserver {
-  static const _primary = Color(0xFF6366F1);
+  static const _primary = Color(0xFF0F8A5D);
 
   final _firestoreService = FirestoreService();
   final _authService = FirebaseAuthService();
@@ -299,7 +299,7 @@ class _ChatListScreenState extends State<ChatListScreen>
             const Icon(
               Icons.chat_bubble_outline_rounded,
               size: 56,
-              color: Color(0xFF94A3B8),
+              color: Color(0xFF6B7280),
             ),
             const SizedBox(height: 16),
             Text(
@@ -310,7 +310,7 @@ class _ChatListScreenState extends State<ChatListScreen>
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
+              style: const TextStyle(color: Color(0xFF6B7280), fontSize: 14),
             ),
           ],
         ),
@@ -347,7 +347,7 @@ class _ChatListScreenState extends State<ChatListScreen>
             return const Center(
               child: Text(
                 'Could not load chats.',
-                style: TextStyle(color: Color(0xFF64748B)),
+                style: TextStyle(color: Color(0xFF6B7280)),
               ),
             );
           }
@@ -521,7 +521,7 @@ class _ChatTile extends StatelessWidget {
                                 : FontWeight.normal,
                             color: hasUnread
                                 ? cs.onSurface
-                                : const Color(0xFF64748B),
+                                : const Color(0xFF6B7280),
                           ),
                         ),
                       ],
@@ -536,8 +536,8 @@ class _ChatTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           color: hasUnread
-                              ? const Color(0xFF6366F1)
-                              : const Color(0xFF94A3B8),
+                              ? const Color(0xFF0F8A5D)
+                              : const Color(0xFF6B7280),
                         ),
                       ),
                       ChatFlags(chat: chat, myUid: myUid),
@@ -549,7 +549,7 @@ class _ChatTile extends StatelessWidget {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1),
+                            color: const Color(0xFF0F8A5D),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(

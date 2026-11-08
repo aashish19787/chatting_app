@@ -15,7 +15,7 @@ class NewGroupScreen extends StatefulWidget {
 }
 
 class _NewGroupScreenState extends State<NewGroupScreen> {
-  static const _primary = Color(0xFF6366F1);
+  static const _primary = Color(0xFF0F8A5D);
 
   final _nameController = TextEditingController();
   final _searchController = TextEditingController();
@@ -73,7 +73,7 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
 
   void _showError(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text), backgroundColor: Colors.redAccent),
+      SnackBar(content: Text(text), backgroundColor: Color(0xFFEF4444)),
     );
   }
 
@@ -107,7 +107,7 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Group created! It will appear in your chat list.'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF22C55E),
         ),
       );
       Navigator.of(context).pop();
@@ -203,7 +203,7 @@ class _NewGroupScreenState extends State<NewGroupScreen> {
                 ? const Center(
                     child: Text(
                       'Search for people by name',
-                      style: TextStyle(color: Color(0xFF94A3B8)),
+                      style: TextStyle(color: Color(0xFF6B7280)),
                     ),
                   )
                 : ListView.builder(

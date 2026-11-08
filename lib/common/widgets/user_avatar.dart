@@ -40,7 +40,7 @@ class UserAvatar extends StatelessWidget {
       width: size,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          colors: [Color(0xFF0F8A5D), Color(0xFF087047)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),

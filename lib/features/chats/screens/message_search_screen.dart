@@ -77,7 +77,7 @@ class _MessageSearchScreenState extends State<MessageSearchScreen> {
             text: text.substring(i, i + q.length),
             style: const TextStyle(
               fontWeight: FontWeight.bold,
-              color: Color(0xFF6366F1),
+              color: Color(0xFF0F8A5D),
             ),
           ),
           TextSpan(text: text.substring(i + q.length)),
@@ -129,14 +129,14 @@ class _MessageSearchScreenState extends State<MessageSearchScreen> {
           ? const Center(
               child: Text(
                 'Type a word to search',
-                style: TextStyle(color: Color(0xFF94A3B8)),
+                style: TextStyle(color: Color(0xFF6B7280)),
               ),
             )
           : results.isEmpty
           ? const Center(
               child: Text(
                 'No messages found',
-                style: TextStyle(color: Color(0xFF94A3B8)),
+                style: TextStyle(color: Color(0xFF6B7280)),
               ),
             )
           : ListView.separated(
@@ -157,7 +157,7 @@ class _MessageSearchScreenState extends State<MessageSearchScreen> {
                     _date(m.createdAt),
                     style: const TextStyle(
                       fontSize: 11,
-                      color: Color(0xFF94A3B8),
+                      color: Color(0xFF6B7280),
                     ),
                   ),
                 );

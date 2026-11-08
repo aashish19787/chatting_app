@@ -88,7 +88,7 @@ class GroupTile extends StatelessWidget {
                                 : FontWeight.normal,
                             color: hasUnread
                                 ? cs.onSurface
-                                : const Color(0xFF64748B),
+                                : const Color(0xFF6B7280),
                           ),
                         ),
                       ],
@@ -103,8 +103,8 @@ class GroupTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 12,
                           color: hasUnread
-                              ? const Color(0xFF6366F1)
-                              : const Color(0xFF94A3B8),
+                              ? const Color(0xFF0F8A5D)
+                              : const Color(0xFF6B7280),
                         ),
                       ),
                       ChatFlags(chat: chat, myUid: myUid),
@@ -116,7 +116,7 @@ class GroupTile extends StatelessWidget {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF6366F1),
+                            color: const Color(0xFF0F8A5D),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(

@@ -30,7 +30,7 @@ class MenuScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Log out',
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: Color(0xFFEF4444)),
             ),
           ),
         ],
@@ -58,10 +58,10 @@ class MenuScreen extends StatelessWidget {
         height: 40,
         width: 40,
         decoration: BoxDecoration(
-          color: (color ?? const Color(0xFF6366F1)).withValues(alpha: 0.12),
+          color: (color ?? const Color(0xFF0F8A5D)).withValues(alpha: 0.12),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: color ?? const Color(0xFF6366F1), size: 22),
+        child: Icon(icon, color: color ?? const Color(0xFF0F8A5D), size: 22),
       ),
       title: Text(
         title,
@@ -142,12 +142,12 @@ class MenuScreen extends StatelessWidget {
                   height: 40,
                   width: 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+                    color: const Color(0xFF0F8A5D).withValues(alpha: 0.12),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.dark_mode_outlined,
-                    color: Color(0xFF6366F1),
+                    color: Color(0xFF0F8A5D),
                     size: 22,
                   ),
                 ),
@@ -181,7 +181,7 @@ class MenuScreen extends StatelessWidget {
           _item(
             icon: Icons.logout_rounded,
             title: 'Log out',
-            color: Colors.redAccent,
+            color: Color(0xFFEF4444),
             onTap: () => _logout(context),
           ),
         ],

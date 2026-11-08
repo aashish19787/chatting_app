@@ -27,7 +27,7 @@ class _PostsGridState extends State<PostsGrid> {
 
   void _showError(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text), backgroundColor: Colors.redAccent),
+      SnackBar(content: Text(text), backgroundColor: Color(0xFFEF4444)),
     );
   }
 
@@ -144,7 +144,7 @@ class _PostsGridState extends State<PostsGrid> {
                 child: Center(
                   child: Text(
                     'No posts yet',
-                    style: TextStyle(color: Color(0xFF94A3B8)),
+                    style: TextStyle(color: Color(0xFF6B7280)),
                   ),
                 ),
               );

@@ -22,7 +22,7 @@ class FollowRequestsScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Something went wrong. Please try again.'),
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Color(0xFFEF4444),
           ),
         );
       }
@@ -48,7 +48,7 @@ class FollowRequestsScreen extends StatelessWidget {
             return const Center(
               child: Text(
                 'No follow requests',
-                style: TextStyle(color: Color(0xFF94A3B8)),
+                style: TextStyle(color: Color(0xFF6B7280)),
               ),
             );
           }
@@ -84,7 +84,7 @@ class FollowRequestsScreen extends StatelessWidget {
                           onPressed: () =>
                               run(() => service.acceptRequest(myUid, uid)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF6366F1),
+                            backgroundColor: const Color(0xFF0F8A5D),
                             foregroundColor: Colors.white,
                             minimumSize: const Size(0, 34),
                           ),

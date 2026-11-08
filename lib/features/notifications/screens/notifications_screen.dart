@@ -95,7 +95,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 TextSpan(
                   text: '  ${_ago(n.createdAt)}',
                   style: const TextStyle(
-                    color: Color(0xFF94A3B8),
+                    color: Color(0xFF6B7280),
                     fontSize: 13,
                   ),
                 ),
@@ -209,7 +209,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Icon(
                       Icons.favorite_border_rounded,
                       size: 56,
-                      color: Color(0xFF94A3B8),
+                      color: Color(0xFF6B7280),
                     ),
                     SizedBox(height: 16),
                     Text(
@@ -223,7 +223,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Text(
                       'When someone follows you or likes your post, it shows up here.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Color(0xFF64748B)),
+                      style: TextStyle(color: Color(0xFF6B7280)),
                     ),
                   ],
                 ),
@@ -295,7 +295,7 @@ class _FollowBackButtonState extends State<_FollowBackButton> {
           return const Text(
             'Following',
             style: TextStyle(
-              color: Color(0xFF94A3B8),
+              color: Color(0xFF6B7280),
               fontWeight: FontWeight.w600,
             ),
           );
@@ -304,7 +304,7 @@ class _FollowBackButtonState extends State<_FollowBackButton> {
         return ElevatedButton(
           onPressed: _busy ? null : _follow,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF6366F1),
+            backgroundColor: const Color(0xFF0F8A5D),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             minimumSize: const Size(0, 34),

@@ -33,7 +33,7 @@ class BlockedScreen extends StatelessWidget {
             return const Center(
               child: Text(
                 'You have not blocked anyone.',
-                style: TextStyle(color: Color(0xFF94A3B8)),
+                style: TextStyle(color: Color(0xFF6B7280)),
               ),
             );
           }

@@ -40,7 +40,7 @@ class SavedPostsScreen extends StatelessWidget {
                 child: Text(
                   'Nothing saved yet.\nTap the bookmark on a post to save it.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF94A3B8)),
+                  style: TextStyle(color: Color(0xFF6B7280)),
                 ),
               ),
             );

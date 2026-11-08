@@ -108,7 +108,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
       trailing: IconButton(
         icon: const Icon(
           Icons.chat_bubble_outline_rounded,
-          color: Color(0xFF6366F1),
+          color: Color(0xFF0F8A5D),
         ),
         onPressed: () => Navigator.of(
           context,
@@ -128,7 +128,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
       return const Center(
         child: Text(
           'No users found',
-          style: TextStyle(color: Color(0xFF94A3B8)),
+          style: TextStyle(color: Color(0xFF6B7280)),
         ),
       );
     }
@@ -160,7 +160,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   Icon(
                     Icons.people_outline_rounded,
                     size: 56,
-                    color: Color(0xFF94A3B8),
+                    color: Color(0xFF6B7280),
                   ),
                   SizedBox(height: 16),
                   Text(
@@ -171,7 +171,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   Text(
                     'Search above to find people, then follow them to see them here.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFF64748B)),
+                    style: TextStyle(color: Color(0xFF6B7280)),
                   ),
                 ],
               ),
@@ -189,7 +189,7 @@ class _PeopleScreenState extends State<PeopleScreen> {
                   'Following',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF64748B),
+                    color: Color(0xFF6B7280),
                   ),
                 ),
               );

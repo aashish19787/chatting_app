@@ -39,7 +39,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
 
   void _showError(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text), backgroundColor: Colors.redAccent),
+      SnackBar(content: Text(text), backgroundColor: Color(0xFFEF4444)),
     );
   }
 
@@ -108,7 +108,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
                   return const Center(
                     child: Text(
                       'No comments yet. Be the first!',
-                      style: TextStyle(color: Color(0xFF94A3B8)),
+                      style: TextStyle(color: Color(0xFF6B7280)),
                     ),
                   );
                 }
@@ -153,7 +153,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
                                   text: '  ${_ago(c.createdAt)}',
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: Color(0xFF94A3B8),
+                                    color: Color(0xFF6B7280),
                                   ),
                                 ),
                               ],
@@ -214,7 +214,7 @@ class _CommentsScreenState extends State<CommentsScreen> {
                     onPressed: _sending ? null : _send,
                     icon: const Icon(
                       Icons.send_rounded,
-                      color: Color(0xFF6366F1),
+                      color: Color(0xFF0F8A5D),
                     ),
                   ),
                 ],

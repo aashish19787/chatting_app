@@ -63,7 +63,7 @@ class _FeedScreenState extends State<FeedScreen> {
             Icon(
               Icons.photo_library_outlined,
               size: 56,
-              color: Color(0xFF94A3B8),
+              color: Color(0xFF6B7280),
             ),
             SizedBox(height: 16),
             Text(
@@ -74,7 +74,7 @@ class _FeedScreenState extends State<FeedScreen> {
             Text(
               'Follow people from the People tab, or add your own post from your profile.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B)),
+              style: TextStyle(color: Color(0xFF6B7280)),
             ),
           ],
         ),

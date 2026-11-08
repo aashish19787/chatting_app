@@ -32,7 +32,7 @@ class SaveButton extends StatelessWidget {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Could not update saved posts.'),
-                  backgroundColor: Colors.redAccent,
+                  backgroundColor: Color(0xFFEF4444),
                 ),
               );
             }

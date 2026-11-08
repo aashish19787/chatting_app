@@ -40,7 +40,7 @@ class FollowListScreen extends StatelessWidget {
             return const Center(
               child: Text(
                 'No one here yet',
-                style: TextStyle(color: Color(0xFF94A3B8)),
+                style: TextStyle(color: Color(0xFF6B7280)),
               ),
             );
           }

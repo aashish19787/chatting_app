@@ -71,7 +71,6 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton> {
       final path = await _recorder.stop();
       if (path == null || seconds < 1) return;
       debugPrint(
-        'VOICE FILE: $path size=${await File(path).length()} bytes, ${seconds}s',
       );
       await widget.onRecorded(path, seconds);
     } catch (_) {
@@ -93,7 +92,7 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton> {
                 children: [
                   const Icon(
                     Icons.fiber_manual_record,
-                    color: Colors.redAccent,
+                    color: Color(0xFFEF4444),
                     size: 16,
                   ),
                   const SizedBox(width: 4),
@@ -102,7 +101,7 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton> {
                   ),
                 ],
               )
-            : const Icon(Icons.mic_rounded, color: Color(0xFF6366F1)),
+            : const Icon(Icons.mic_rounded, color: Color(0xFF0F8A5D)),
       ),
     );
   }

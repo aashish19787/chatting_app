@@ -91,7 +91,7 @@ class PostCard extends StatelessWidget {
                         liked
                             ? Icons.favorite_rounded
                             : Icons.favorite_border_rounded,
-                        color: liked ? Colors.redAccent : null,
+                        color: liked ? Color(0xFFEF4444) : null,
                         size: 28,
                       ),
                     ),
@@ -144,7 +144,7 @@ class PostCard extends StatelessWidget {
                                   ? 'View 1 comment'
                                   : 'View all $count comments'),
                         style: const TextStyle(
-                          color: Color(0xFF94A3B8),
+                          color: Color(0xFF6B7280),
                           fontSize: 13,
                         ),
                       ),

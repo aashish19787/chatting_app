@@ -131,7 +131,7 @@ class _ShareSheetState extends State<_ShareSheet> {
                 ? "You can't message this person."
                 : 'Could not send. Please try again.',
           ),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
     } finally {
@@ -143,7 +143,7 @@ class _ShareSheetState extends State<_ShareSheet> {
     if (_sent.contains(chat.id)) {
       return const Text(
         'Sent',
-        style: TextStyle(color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+        style: TextStyle(color: Color(0xFF6B7280), fontWeight: FontWeight.w600),
       );
     }
     if (_sending.contains(chat.id)) {
@@ -156,7 +156,7 @@ class _ShareSheetState extends State<_ShareSheet> {
     return ElevatedButton(
       onPressed: () => _send(chat),
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF6366F1),
+        backgroundColor: const Color(0xFF0F8A5D),
         foregroundColor: Colors.white,
         minimumSize: const Size(0, 34),
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -218,7 +218,7 @@ class _ShareSheetState extends State<_ShareSheet> {
             ),
             ListTile(
               leading: const CircleAvatar(
-                backgroundColor: Color(0xFF6366F1),
+                backgroundColor: Color(0xFF0F8A5D),
                 child: Icon(Icons.ios_share_rounded, color: Colors.white),
               ),
               title: const Text('Share outside the app'),
@@ -248,7 +248,7 @@ class _ShareSheetState extends State<_ShareSheet> {
                         child: Text(
                           'No chats yet. Start a chat first, or use "Share outside the app".',
                           textAlign: TextAlign.center,
-                          style: TextStyle(color: Color(0xFF94A3B8)),
+                          style: TextStyle(color: Color(0xFF6B7280)),
                         ),
                       ),
                     );

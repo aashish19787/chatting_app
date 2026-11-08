@@ -21,7 +21,7 @@ void showChatOptions(
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Something went wrong. Please try again.'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
     }
@@ -74,7 +74,7 @@ class ChatFlags extends StatelessWidget {
     final muted = chat.isMutedFor(myUid);
     if (!pinned && !muted) return const SizedBox.shrink();
 
-    const color = Color(0xFF94A3B8);
+    const color = Color(0xFF6B7280);
     return Padding(
       padding: const EdgeInsets.only(top: 4),
       child: Row(

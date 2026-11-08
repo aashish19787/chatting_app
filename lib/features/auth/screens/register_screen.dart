@@ -65,7 +65,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Account created successfully!'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF22C55E),
         ),
       );
 
@@ -77,7 +77,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: Colors.redAccent),
+        SnackBar(content: Text(e.message), backgroundColor: Color(0xFFEF4444)),
       );
     } catch (_) {
       // Covers Firestore errors (for example, rules not published yet).
@@ -86,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not save your profile. Please try again.'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
     } finally {
@@ -103,7 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: const Color(0xFF64748B)),
+      prefixIcon: Icon(icon, color: const Color(0xFF6B7280)),
       suffixIcon: suffix,
       filled: true,
       fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -119,15 +119,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Color(0xFF6366F1), width: 1.5),
+        borderSide: const BorderSide(color: Color(0xFF0F8A5D), width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: const BorderSide(color: Color(0xFFEF4444)),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: Colors.redAccent),
+        borderSide: const BorderSide(color: Color(0xFFEF4444)),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 19),
     );
@@ -135,8 +135,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const primaryColor = Color(0xFF6366F1);
-    const secondaryColor = Color(0xFF8B5CF6);
+    const primaryColor = Color(0xFF0F8A5D);
+    const secondaryColor = Color(0xFF087047);
 
     return Scaffold(
       body: SafeArea(
@@ -194,7 +194,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Text(
                     'Join us and start connecting with people.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 14, color: Color(0xFF64748B)),
+                    style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
                   ),
 
                   const SizedBox(height: 35),
@@ -428,7 +428,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const Text(
                         'Already have an account? ',
                         style: TextStyle(
-                          color: Color(0xFF64748B),
+                          color: Color(0xFF6B7280),
                           fontSize: 13,
                         ),
                       ),
@@ -455,7 +455,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const Text(
                     'By creating an account, you agree to our Terms & Privacy Policy.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                    style: TextStyle(fontSize: 11, color: Color(0xFF6B7280)),
                   ),
                 ],
               ),

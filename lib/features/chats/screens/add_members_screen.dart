@@ -22,7 +22,7 @@ class AddMembersScreen extends StatefulWidget {
 }
 
 class _AddMembersScreenState extends State<AddMembersScreen> {
-  static const _primary = Color(0xFF6366F1);
+  static const _primary = Color(0xFF0F8A5D);
 
   final _searchController = TextEditingController();
   final _firestoreService = FirestoreService();
@@ -83,7 +83,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
 
   void _showError(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text), backgroundColor: Colors.redAccent),
+      SnackBar(content: Text(text), backgroundColor: Color(0xFFEF4444)),
     );
   }
 
@@ -171,7 +171,7 @@ class _AddMembersScreenState extends State<AddMembersScreen> {
                 ? const Center(
                     child: Text(
                       'Search for people by name',
-                      style: TextStyle(color: Color(0xFF94A3B8)),
+                      style: TextStyle(color: Color(0xFF6B7280)),
                     ),
                   )
                 : ListView.builder(

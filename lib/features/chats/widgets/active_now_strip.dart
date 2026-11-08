@@ -26,7 +26,7 @@ class ActiveNowStrip extends StatefulWidget {
 
 class _ActiveNowStripState extends State<ActiveNowStrip> {
   static const _maxPeople = 40;
-  static const _primary = Color(0xFF6366F1);
+  static const _primary = Color(0xFF0F8A5D);
 
   final _service = FirestoreService();
 
@@ -132,7 +132,7 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
               remaining.isEmpty
                   ? 'Notes can\'t be edited. You can delete it.'
                   : 'Notes can\'t be edited. It disappears $remaining, or you can delete it now.',
-              style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+              style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
             ),
           ],
         ),
@@ -145,7 +145,7 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: Color(0xFFEF4444)),
             ),
           ),
         ],
@@ -160,7 +160,7 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not delete your note.'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
     }
@@ -196,7 +196,7 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
               onPressed: () => Navigator.pop(dialogContext, '\u0000delete'),
               child: const Text(
                 'Delete',
-                style: TextStyle(color: Colors.redAccent),
+                style: TextStyle(color: Color(0xFFEF4444)),
               ),
             ),
           TextButton(
@@ -225,7 +225,7 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Could not update your note.'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
     }
@@ -257,7 +257,7 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
                   style: TextStyle(
                     fontSize: 11,
                     height: 1.15,
-                    color: placeholder ? const Color(0xFF94A3B8) : null,
+                    color: placeholder ? const Color(0xFF6B7280) : null,
                   ),
                 ),
               ),
@@ -448,7 +448,7 @@ class _NoteReplySheetState extends State<_NoteReplySheet> {
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Reply sent'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF22C55E),
         ),
       );
     } catch (e) {
@@ -461,7 +461,7 @@ class _NoteReplySheetState extends State<_NoteReplySheet> {
                 ? "You can't message this person."
                 : 'Could not send your reply.',
           ),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
     }
@@ -531,7 +531,7 @@ class _NoteReplySheetState extends State<_NoteReplySheet> {
                     onPressed: _sending ? null : _send,
                     icon: const Icon(
                       Icons.send_rounded,
-                      color: Color(0xFF6366F1),
+                      color: Color(0xFF0F8A5D),
                     ),
                   ),
                 ),

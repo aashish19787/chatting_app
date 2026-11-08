@@ -28,8 +28,8 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  static const _primary = Color(0xFF6366F1);
-  static const _secondary = Color(0xFF8B5CF6);
+  static const _primary = Color(0xFF0F8A5D);
+  static const _secondary = Color(0xFF087047);
 
   final _messageController = TextEditingController();
   final _firestoreService = FirestoreService();
@@ -100,7 +100,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _showError(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text), backgroundColor: Colors.redAccent),
+      SnackBar(content: Text(text), backgroundColor: Color(0xFFEF4444)),
     );
   }
 
@@ -239,7 +239,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: mine == e
-                      ? const Color(0xFF6366F1).withValues(alpha: 0.2)
+                      ? const Color(0xFF0F8A5D).withValues(alpha: 0.2)
                       : null,
                 ),
                 child: Text(e, style: const TextStyle(fontSize: 28)),
@@ -332,11 +332,11 @@ class _ChatScreenState extends State<ChatScreen> {
               ListTile(
                 leading: const Icon(
                   Icons.delete_outline_rounded,
-                  color: Colors.redAccent,
+                  color: Color(0xFFEF4444),
                 ),
                 title: const Text(
                   'Delete for everyone',
-                  style: TextStyle(color: Colors.redAccent),
+                  style: TextStyle(color: Color(0xFFEF4444)),
                 ),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -373,7 +373,7 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: Color(0xFFEF4444)),
             ),
           ),
         ],
@@ -444,7 +444,7 @@ class _ChatScreenState extends State<ChatScreen> {
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF64748B),
+            color: Color(0xFF6B7280),
           ),
         ),
       ),
@@ -628,7 +628,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: Center(
                             child: Icon(
                               Icons.broken_image_outlined,
-                              color: Color(0xFF94A3B8),
+                              color: Color(0xFF6B7280),
                             ),
                           ),
                         ),
@@ -665,7 +665,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           fontSize: 10,
                           color: isMe
                               ? Colors.white70
-                              : const Color(0xFF94A3B8),
+                              : const Color(0xFF6B7280),
                         ),
                       ),
                       if (isMe && !message.deleted) ...[
@@ -719,7 +719,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF64748B),
+                    color: Color(0xFF6B7280),
                   ),
                 ),
               ],
@@ -810,7 +810,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     ? _primary
                                     : user.isActive
                                     ? const Color(0xFF22C55E)
-                                    : const Color(0xFF94A3B8),
+                                    : const Color(0xFF6B7280),
                               ),
                             ),
                           ],
@@ -842,7 +842,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       return const Center(
                         child: Text(
                           'Could not load messages.',
-                          style: TextStyle(color: Color(0xFF64748B)),
+                          style: TextStyle(color: Color(0xFF6B7280)),
                         ),
                       );
                     }
@@ -884,7 +884,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             const Text(
                               'No messages yet. Say hi 👋',
                               style: TextStyle(
-                                color: Color(0xFF64748B),
+                                color: Color(0xFF6B7280),
                                 fontSize: 14,
                               ),
                             ),

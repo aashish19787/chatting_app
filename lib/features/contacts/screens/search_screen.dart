@@ -66,7 +66,7 @@ class _SearchScreenState extends State<SearchScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Search failed. Please try again.'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
     } finally {
@@ -81,7 +81,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildBody() {
-    const primaryColor = Color(0xFF6366F1);
+    const primaryColor = Color(0xFF0F8A5D);
 
     if (_isSearching) {
       return const Center(
@@ -93,7 +93,7 @@ class _SearchScreenState extends State<SearchScreen> {
       return const Center(
         child: Text(
           'Type a name to find people',
-          style: TextStyle(color: Color(0xFF64748B), fontSize: 15),
+          style: TextStyle(color: Color(0xFF6B7280), fontSize: 15),
         ),
       );
     }
@@ -102,7 +102,7 @@ class _SearchScreenState extends State<SearchScreen> {
       return const Center(
         child: Text(
           'No users found',
-          style: TextStyle(color: Color(0xFF64748B), fontSize: 15),
+          style: TextStyle(color: Color(0xFF6B7280), fontSize: 15),
         ),
       );
     }
@@ -135,7 +135,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     width: 48,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                        colors: [Color(0xFF0F8A5D), Color(0xFF087047)],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -170,7 +170,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           user.email,
                           style: const TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF64748B),
+                            color: Color(0xFF6B7280),
                           ),
                         ),
                       ],
@@ -178,7 +178,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const Icon(
                     Icons.chat_bubble_outline_rounded,
-                    color: Color(0xFF6366F1),
+                    color: Color(0xFF0F8A5D),
                     size: 20,
                   ),
                 ],
@@ -220,7 +220,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 hintText: 'Search by name',
                 prefixIcon: const Icon(
                   Icons.search_rounded,
-                  color: Color(0xFF64748B),
+                  color: Color(0xFF6B7280),
                 ),
                 filled: true,
                 fillColor: Theme.of(context)
@@ -240,7 +240,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: const BorderSide(
-                    color: Color(0xFF6366F1),
+                    color: Color(0xFF0F8A5D),
                     width: 1.5,
                   ),
                 ),

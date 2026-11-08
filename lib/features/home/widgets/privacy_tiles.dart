@@ -14,10 +14,10 @@ class PrivacyTiles extends StatelessWidget {
       height: 40,
       width: 40,
       decoration: BoxDecoration(
-        color: const Color(0xFF6366F1).withValues(alpha: 0.12),
+        color: const Color(0xFF0F8A5D).withValues(alpha: 0.12),
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: const Color(0xFF6366F1), size: 22),
+      child: Icon(icon, color: const Color(0xFF0F8A5D), size: 22),
     );
   }
 
@@ -48,7 +48,7 @@ class PrivacyTiles extends StatelessWidget {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Could not change this setting.'),
-                      backgroundColor: Colors.redAccent,
+                      backgroundColor: Color(0xFFEF4444),
                     ),
                   );
                 }

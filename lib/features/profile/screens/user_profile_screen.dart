@@ -24,7 +24,7 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  static const _primary = Color(0xFF6366F1);
+  static const _primary = Color(0xFF0F8A5D);
 
   final _firestoreService = FirestoreService();
   final _authService = FirebaseAuthService();
@@ -65,7 +65,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   void _showError(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text), backgroundColor: Colors.redAccent),
+      SnackBar(content: Text(text), backgroundColor: Color(0xFFEF4444)),
     );
   }
 
@@ -207,7 +207,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Block',
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: Color(0xFFEF4444)),
             ),
           ),
         ],
@@ -221,7 +221,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Blocked.'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF22C55E),
         ),
       );
     } catch (_) {
@@ -237,7 +237,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Unblocked.'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF22C55E),
         ),
       );
     } catch (_) {
@@ -268,7 +268,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Thanks, your report was sent.'),
-          backgroundColor: Colors.green,
+          backgroundColor: Color(0xFF22C55E),
         ),
       );
     } catch (_) {
@@ -299,7 +299,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
             ),
           ],
         ),
@@ -426,7 +426,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             user.email,
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Color(0xFF94A3B8),
+                              color: Color(0xFF6B7280),
                             ),
                           ),
                         ),
@@ -535,7 +535,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   SizedBox(height: 4),
                                   Text(
                                     'Follow this account to see their posts.',
-                                    style: TextStyle(color: Color(0xFF94A3B8)),
+                                    style: TextStyle(color: Color(0xFF6B7280)),
                                   ),
                                 ],
                               ),

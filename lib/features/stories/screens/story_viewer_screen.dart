@@ -96,7 +96,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(text),
-        backgroundColor: error ? Colors.redAccent : Colors.green,
+        backgroundColor: error ? Color(0xFFEF4444) : Color(0xFF22C55E),
         duration: const Duration(seconds: 2),
       ),
     );
@@ -152,7 +152,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: Color(0xFFEF4444)),
             ),
           ),
         ],
@@ -224,7 +224,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                           ? const Center(
                               child: Text(
                                 'No one has seen this yet',
-                                style: TextStyle(color: Color(0xFF94A3B8)),
+                                style: TextStyle(color: Color(0xFF6B7280)),
                               ),
                             )
                           : ListView.builder(
@@ -252,7 +252,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                                       trailing: Text(
                                         at == null ? '' : _ago(at),
                                         style: const TextStyle(
-                                          color: Color(0xFF94A3B8),
+                                          color: Color(0xFF6B7280),
                                         ),
                                       ),
                                     );

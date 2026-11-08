@@ -34,7 +34,7 @@ class PostViewScreen extends StatelessWidget {
             onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text(
               'Delete',
-              style: TextStyle(color: Colors.redAccent),
+              style: TextStyle(color: Color(0xFFEF4444)),
             ),
           ),
         ],
@@ -51,7 +51,7 @@ class PostViewScreen extends StatelessWidget {
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Could not delete the post.'),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: Color(0xFFEF4444),
         ),
       );
     }
@@ -155,7 +155,7 @@ class PostViewScreen extends StatelessWidget {
                   liked
                       ? Icons.favorite_rounded
                       : Icons.favorite_border_rounded,
-                  color: liked ? Colors.redAccent : null,
+                  color: liked ? Color(0xFFEF4444) : null,
                   size: 28,
                 ),
               ),
@@ -189,7 +189,7 @@ class PostViewScreen extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
           child: Text(
             '${post.createdAt.day}/${post.createdAt.month}/${post.createdAt.year}',
-            style: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+            style: const TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
           ),
         ),
       ],

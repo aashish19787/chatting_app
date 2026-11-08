@@ -22,7 +22,7 @@ class GroupInfoScreen extends StatefulWidget {
 }
 
 class _GroupInfoScreenState extends State<GroupInfoScreen> {
-  static const _primary = Color(0xFF6366F1);
+  static const _primary = Color(0xFF0F8A5D);
 
   final _service = FirestoreService();
   final _auth = FirebaseAuthService();
@@ -33,7 +33,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(text),
-        backgroundColor: error ? Colors.redAccent : Colors.green,
+        backgroundColor: error ? Color(0xFFEF4444) : Color(0xFF22C55E),
       ),
     );
   }
@@ -53,7 +53,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
             onPressed: () => Navigator.pop(dialogContext, true),
             child: Text(
               action,
-              style: const TextStyle(color: Colors.redAccent),
+              style: const TextStyle(color: Color(0xFFEF4444)),
             ),
           ),
         ],
@@ -267,7 +267,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
               Center(
                 child: Text(
                   '${chat.participants.length} members',
-                  style: const TextStyle(color: Color(0xFF94A3B8)),
+                  style: const TextStyle(color: Color(0xFF6B7280)),
                 ),
               ),
               if (!isAdmin)
@@ -277,7 +277,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                     child: Text(
                       'Only the admin can rename the group, change its photo or remove people.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280)),
                     ),
                   ),
                 ),
@@ -286,7 +286,7 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                 'Members',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF64748B),
+                  color: Color(0xFF6B7280),
                 ),
               ),
               const SizedBox(height: 8),
@@ -365,8 +365,8 @@ class _GroupInfoScreenState extends State<GroupInfoScreen> {
                 icon: const Icon(Icons.exit_to_app_rounded),
                 label: const Text('Leave group'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                  side: const BorderSide(color: Colors.redAccent),
+                  foregroundColor: Color(0xFFEF4444),
+                  side: const BorderSide(color: Color(0xFFEF4444)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
