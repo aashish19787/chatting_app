@@ -70,7 +70,9 @@ class _VoiceRecorderButtonState extends State<VoiceRecorderButton> {
     try {
       final path = await _recorder.stop();
       if (path == null || seconds < 1) return;
-      debugPrint('VOICE FILE: $path size=${await File(path).length()} bytes, ${seconds}s');
+      debugPrint(
+        'VOICE FILE: $path size=${await File(path).length()} bytes, ${seconds}s',
+      );
       await widget.onRecorded(path, seconds);
     } catch (_) {
       widget.onError('Could not send the voice message.');

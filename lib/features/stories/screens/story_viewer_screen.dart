@@ -27,6 +27,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
   final _focus = FocusNode();
   late final AnimationController _controller;
   late List<StoryModel> _stories;
+  final Set<String> _marked = {};
   int _index = 0;
   bool _sending = false;
 
@@ -41,7 +42,6 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
           })
           ..forward();
 
-    // Pause the story while typing.
     _focus.addListener(() {
       if (_focus.hasFocus) {
         _controller.stop();
@@ -49,6 +49,8 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
         _controller.forward();
       }
     });
+
+    _markViewed();
   }
 
   @override
@@ -57,6 +59,15 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     _replyController.dispose();
     _focus.dispose();
     super.dispose();
+  }
+
+  /// Record that I saw this story (once per story, never for my own).
+  void _markViewed() {
+    if (_stories.isEmpty) return;
+    final story = _stories[_index];
+    if (story.authorId == widget.myUid) return;
+    if (!_marked.add(story.id)) return;
+    _service.markStoryViewed(story.id, widget.myUid);
   }
 
   void _go(int i) {
@@ -71,6 +82,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     }
     setState(() => _index = i);
     _controller.forward(from: 0);
+    _markViewed();
   }
 
   String _ago(DateTime time) {
@@ -170,6 +182,131 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       if (_index >= _stories.length) _index = _stories.length - 1;
     });
     _controller.forward(from: 0);
+  }
+
+  /// Bottom sheet with everyone who saw this story.
+  Future<void> _showViewers(StoryModel story) async {
+    _controller.stop();
+
+    await showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: SizedBox(
+            height: MediaQuery.of(sheetContext).size.height * 0.55,
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _service.storyViewsStream(story.id),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(child: Text('Could not load viewers.'));
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final views = snapshot.data!;
+
+                return Column(
+                  children: [
+                    Text(
+                      views.length == 1
+                          ? '1 viewer'
+                          : '${views.length} viewers',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: views.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'No one has seen this yet',
+                                style: TextStyle(color: Color(0xFF94A3B8)),
+                              ),
+                            )
+                          : ListView.builder(
+                              itemCount: views.length,
+                              itemBuilder: (context, i) {
+                                final uid = views[i]['uid'] as String;
+                                final at = views[i]['viewedAt'] as DateTime?;
+                                return StreamBuilder<UserModel?>(
+                                  stream: _service.userStream(uid),
+                                  builder: (context, userSnap) {
+                                    final user = userSnap.data;
+                                    final name = user?.name ?? 'Loading...';
+                                    return ListTile(
+                                      leading: UserAvatar(
+                                        name: name,
+                                        photoBase64: user?.photoBase64 ?? '',
+                                        size: 44,
+                                      ),
+                                      title: Text(
+                                        name,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      trailing: Text(
+                                        at == null ? '' : _ago(at),
+                                        style: const TextStyle(
+                                          color: Color(0xFF94A3B8),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (mounted) _controller.forward();
+  }
+
+  /// Shown on MY stories instead of the reply bar.
+  Widget _seenBar(StoryModel story) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _service.storyViewsStream(story.id),
+      builder: (context, snapshot) {
+        final count = snapshot.data?.length ?? 0;
+        return InkWell(
+          onTap: () => _showViewers(story),
+          child: Container(
+            width: double.infinity,
+            color: Colors.black,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.remove_red_eye_outlined,
+                  color: Colors.white,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Seen by $count',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Widget _replyBar() {
@@ -361,7 +498,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
                 ],
               ),
             ),
-            if (!mine) _replyBar(),
+            mine ? _seenBar(story) : _replyBar(),
           ],
         ),
       ),
