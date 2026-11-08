@@ -1,3 +1,5 @@
+import 'saved_posts_screen.dart';
+import '../widgets/privacy_tiles.dart';
 import 'blocked_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -162,6 +164,14 @@ class MenuScreen extends StatelessWidget {
             },
           ),
           const Divider(height: 24),
+          const PrivacyTiles(),
+          _item(
+            icon: Icons.bookmark_border_rounded,
+            title: 'Saved posts',
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SavedPostsScreen())),
+          ),
           _item(
             icon: Icons.block_rounded,
             title: 'Blocked people',

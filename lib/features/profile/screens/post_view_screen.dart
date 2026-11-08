@@ -1,3 +1,4 @@
+import '../widgets/save_button.dart';
 import '../../share/share_sheet.dart';
 import 'comments_screen.dart';
 
@@ -74,6 +75,7 @@ class PostViewScreen extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             actions: [
+              if (post != null) SaveButton(postId: post.id),
               if (post != null && post.authorId == myUid)
                 IconButton(
                   icon: const Icon(Icons.delete_outline_rounded),

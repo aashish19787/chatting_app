@@ -66,8 +66,9 @@ class _MessageSearchScreenState extends State<MessageSearchScreen> {
   /// Bold the part of the text that matches.
   Widget _highlight(String text, String q) {
     final i = text.toLowerCase().indexOf(q.toLowerCase());
-    if (i == -1)
+    if (i == -1) {
       return Text(text, maxLines: 3, overflow: TextOverflow.ellipsis);
+    }
     return Text.rich(
       TextSpan(
         children: [

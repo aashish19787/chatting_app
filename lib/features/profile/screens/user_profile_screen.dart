@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../share/share_sheet.dart';
 import '../../../services/block_list.dart';
 import '../widgets/posts_grid.dart';
@@ -29,6 +31,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   late final String _myUid;
   bool _busy = false;
+  bool _requested = false;
+  bool _hasRequestedMe = false;
+  StreamSubscription<bool>? _incomingSub;
+  StreamSubscription<bool>? _reqSub;
 
   bool get _isMe => widget.uid == _myUid;
 
@@ -36,6 +42,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   void initState() {
     super.initState();
     _myUid = _authService.currentUser!.uid;
+    if (widget.uid != _myUid) {
+      _incomingSub = _firestoreService
+          .requestedStream(widget.uid, _myUid)
+          .listen((v) {
+            if (mounted) setState(() => _hasRequestedMe = v);
+          });
+      _reqSub = _firestoreService.requestedStream(_myUid, widget.uid).listen((
+        v,
+      ) {
+        if (mounted) setState(() => _requested = v);
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _reqSub?.cancel();
+    _incomingSub?.cancel();
+    super.dispose();
   }
 
   void _showError(String text) {
@@ -44,14 +69,73 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Future<void> _toggleFollow(bool isFollowing) async {
+  Future<void> _answerRequest(bool accept) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      if (accept) {
+        await _firestoreService.acceptRequest(_myUid, widget.uid);
+      } else {
+        await _firestoreService.declineRequest(_myUid, widget.uid);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      _showError('Something went wrong. Please try again.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Widget _requestBanner(String name) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: _primary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              '${name.split(' ').first} requested to follow you',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: _busy ? null : () => _answerRequest(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _primary,
+              foregroundColor: Colors.white,
+              minimumSize: const Size(0, 34),
+            ),
+            child: const Text('Confirm'),
+          ),
+          const SizedBox(width: 6),
+          OutlinedButton(
+            onPressed: _busy ? null : () => _answerRequest(false),
+            style: OutlinedButton.styleFrom(minimumSize: const Size(0, 34)),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleFollow(bool isFollowing, UserModel user) async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
       if (isFollowing) {
         await _firestoreService.unfollow(_myUid, widget.uid);
       } else {
-        await _firestoreService.follow(_myUid, widget.uid);
+        if (_requested) {
+          await _firestoreService.cancelRequest(_myUid, widget.uid);
+        } else if (user.isPrivate) {
+          await _firestoreService.requestFollow(_myUid, widget.uid);
+        } else {
+          await _firestoreService.follow(_myUid, widget.uid);
+        }
       }
     } catch (_) {
       if (!mounted) return;
@@ -352,6 +436,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           child: Text(user.bio),
                         ),
                       const SizedBox(height: 16),
+                      if (!_isMe && _hasRequestedMe) _requestBanner(user.name),
                       if (_isMe)
                         Row(
                           children: [
@@ -387,7 +472,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       style: _outlinedStyle,
                                       onPressed: _busy
                                           ? null
-                                          : () => _toggleFollow(true),
+                                          : () => _toggleFollow(true, user),
                                       child: const Text('Following'),
                                     )
                                   : ElevatedButton(
@@ -405,9 +490,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       ),
                                       onPressed: _busy
                                           ? null
-                                          : () => _toggleFollow(false),
+                                          : () => _toggleFollow(false, user),
                                       child: Text(
-                                        followsMe ? 'Follow back' : 'Follow',
+                                        _requested
+                                            ? 'Requested'
+                                            : (followsMe
+                                                  ? 'Follow back'
+                                                  : 'Follow'),
                                       ),
                                     ),
                             ),
@@ -428,7 +517,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       const SizedBox(height: 20),
                       const Divider(height: 1),
                       const SizedBox(height: 12),
-                      PostsGrid(uid: widget.uid),
+                      (!user.isPrivate || _isMe || isFollowing)
+                          ? PostsGrid(uid: widget.uid)
+                          : const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 40),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.lock_outline_rounded, size: 48),
+                                  SizedBox(height: 12),
+                                  Text(
+                                    'This account is private',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Follow this account to see their posts.',
+                                    style: TextStyle(color: Color(0xFF94A3B8)),
+                                  ),
+                                ],
+                              ),
+                            ),
                     ],
                   );
                 },

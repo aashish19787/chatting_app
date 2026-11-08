@@ -1,3 +1,6 @@
+import '../widgets/voice_bubble.dart';
+import '../widgets/voice_recorder_button.dart';
+import '../../share/share_sheet.dart';
 import 'message_search_screen.dart';
 
 import 'dart:async';
@@ -200,6 +203,26 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     }
   }
 
+  Future<void> _sendVoice(String path, int seconds) async {
+    try {
+      setState(() => _isUploadingImage = true);
+      final url = await _storageService.uploadVoice(path);
+      await _firestoreService.sendGroupMessage(
+        chatId: widget.chatId,
+        senderId: _myUid,
+        participants: _participants,
+        text: '🎤 $seconds',
+        imageUrl: 'voice:$url',
+      );
+    } catch (e) {
+      debugPrint('Voice send failed: $e');
+      if (!mounted) return;
+      _showError('Could not send the voice message.');
+    } finally {
+      if (mounted) setState(() => _isUploadingImage = false);
+    }
+  }
+
   Future<void> _sendImage() async {
     if (_isUploadingImage || _participants.isEmpty) return;
 
@@ -341,6 +364,19 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                 onTap: () {
                   Navigator.pop(sheetContext);
                   setState(() => _replyingTo = message);
+                },
+              ),
+            if (!message.deleted)
+              ListTile(
+                leading: const Icon(Icons.forward_rounded),
+                title: const Text('Forward'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  forwardMessage(
+                    context,
+                    text: message.text,
+                    imageUrl: message.imageUrl,
+                  );
                 },
               ),
             if (isMe && !message.deleted)
@@ -508,7 +544,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     final cs = Theme.of(context).colorScheme;
     final isMe = message.senderId == _myUid;
     final textColor = isMe ? Colors.white : cs.onSurface;
-    final showImage = message.hasImage && !message.deleted;
+    final isVoice = message.imageUrl.startsWith('voice:');
+    final showImage = message.hasImage && !message.deleted && !isVoice;
 
     return _withReactions(
       message,
@@ -642,7 +679,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                     ),
                   ),
 
-                if (!message.deleted && message.text.isNotEmpty)
+                if (isVoice && !message.deleted)
+                  VoiceBubble(
+                    url: message.imageUrl.substring(6),
+                    seconds:
+                        int.tryParse(message.text.replaceAll('🎤 ', '')) ?? 0,
+                    color: textColor,
+                  ),
+                if (!message.deleted && !isVoice && message.text.isNotEmpty)
                   Text(
                     message.text,
                     style: TextStyle(fontSize: 15, color: textColor),
@@ -979,7 +1023,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            VoiceRecorderButton(
+                              onRecorded: _sendVoice,
+                              onError: _showError,
+                            ),
+                            const SizedBox(width: 4),
                             GestureDetector(
                               onTap: _send,
                               child: Container(

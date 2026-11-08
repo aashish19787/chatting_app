@@ -38,6 +38,21 @@ Future<void> shareProfile(BuildContext context, String uid) async {
   );
 }
 
+/// Forward a message (text and/or photo) to other chats.
+void forwardMessage(
+  BuildContext context, {
+  required String text,
+  String imageUrl = '',
+}) {
+  final label = text.isEmpty ? '↪ Forwarded' : '↪ Forwarded\n$text';
+  showShareSheet(
+    context,
+    chatText: label,
+    imageUrl: imageUrl,
+    externalText: text.isEmpty ? imageUrl : text,
+  );
+}
+
 void showShareSheet(
   BuildContext context, {
   required String chatText,

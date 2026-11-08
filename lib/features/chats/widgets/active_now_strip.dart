@@ -338,8 +338,7 @@ class _ActiveNowStripState extends State<ActiveNowStrip> {
 
     return InkWell(
       borderRadius: BorderRadius.circular(14),
-      onTap: () => Navigator.of(context)
-          .push(MaterialPageRoute(builder: (_) => ChatScreen(otherUser: user))),
+      onTap: () => _openPerson(user),
       child: SizedBox(
         width: 76,
         child: Column(

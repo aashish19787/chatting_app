@@ -1,3 +1,4 @@
+import '../../profile/widgets/save_button.dart';
 import '../../share/share_sheet.dart';
 
 import 'package:flutter/material.dart';
@@ -102,6 +103,7 @@ class PostCard extends StatelessWidget {
                       onPressed: () => sharePost(context, post),
                       icon: const Icon(Icons.ios_share_rounded, size: 25),
                     ),
+                    SaveButton(postId: post.id),
                     const Spacer(),
                     Text(
                       post.likeCount == 1

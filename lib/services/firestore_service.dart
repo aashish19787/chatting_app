@@ -128,7 +128,9 @@ class FirestoreService {
 
     await chatRef.set({
       'participants': participants,
-      'lastMessage': imageUrl.isNotEmpty ? '📷 Photo' : text,
+      'lastMessage': imageUrl.startsWith('voice:')
+          ? '🎤 Voice message'
+          : (imageUrl.isNotEmpty ? '📷 Photo' : text),
       'lastMessageTime': FieldValue.serverTimestamp(),
       'lastSenderId': senderId,
       'unreadCount': {receiverId: FieldValue.increment(1), senderId: 0},
@@ -268,7 +270,9 @@ class FirestoreService {
     final chatRef = _chats.doc(chatId);
 
     await chatRef.update({
-      'lastMessage': imageUrl.isNotEmpty ? '📷 Photo' : text,
+      'lastMessage': imageUrl.startsWith('voice:')
+          ? '🎤 Voice message'
+          : (imageUrl.isNotEmpty ? '📷 Photo' : text),
       'lastMessageTime': FieldValue.serverTimestamp(),
       'lastSenderId': senderId,
       for (final id in participants)
@@ -739,6 +743,139 @@ class FirestoreService {
         .limit(limit)
         .get();
     return s.docs.map((d) => MessageModel.fromMap(d.id, d.data())).toList();
+  }
+
+  // ---------------------------------------------------------------
+  // PRIVATE ACCOUNTS + FOLLOW REQUESTS
+  // ---------------------------------------------------------------
+
+  Future<void> setPrivate(String uid, bool value) async {
+    await _users.doc(uid).update({'isPrivate': value});
+  }
+
+  Future<void> requestFollow(String myUid, String targetUid) async {
+    await _users.doc(targetUid).collection('followRequests').doc(myUid).set({
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> cancelRequest(String myUid, String targetUid) async {
+    await _users
+        .doc(targetUid)
+        .collection('followRequests')
+        .doc(myUid)
+        .delete();
+  }
+
+  /// True while I have a pending request to [targetUid].
+  Stream<bool> requestedStream(String myUid, String targetUid) {
+    return _users
+        .doc(targetUid)
+        .collection('followRequests')
+        .doc(myUid)
+        .snapshots()
+        .map((d) => d.exists);
+  }
+
+  /// People who asked to follow [uid].
+  Stream<List<String>> requestsStream(String uid) {
+    return _users
+        .doc(uid)
+        .collection('followRequests')
+        .snapshots()
+        .map((s) => s.docs.map((d) => d.id).toList());
+  }
+
+  Future<void> acceptRequest(String myUid, String requesterUid) async {
+    final batch = _db.batch();
+    final data = {'createdAt': FieldValue.serverTimestamp()};
+    batch.set(
+      _users.doc(myUid).collection('followers').doc(requesterUid),
+      data,
+    );
+    batch.set(
+      _users.doc(requesterUid).collection('following').doc(myUid),
+      data,
+    );
+    batch.delete(
+      _users.doc(myUid).collection('followRequests').doc(requesterUid),
+    );
+    await batch.commit();
+  }
+
+  Future<void> declineRequest(String myUid, String requesterUid) async {
+    await _users
+        .doc(myUid)
+        .collection('followRequests')
+        .doc(requesterUid)
+        .delete();
+  }
+
+  // ---------------------------------------------------------------
+  // SAVED POSTS
+  // ---------------------------------------------------------------
+
+  Future<void> setSaved(String uid, String postId, bool save) async {
+    final ref = _users.doc(uid).collection('saved').doc(postId);
+    if (save) {
+      await ref.set({'createdAt': FieldValue.serverTimestamp()});
+    } else {
+      await ref.delete();
+    }
+  }
+
+  Stream<bool> isSavedStream(String uid, String postId) {
+    return _users
+        .doc(uid)
+        .collection('saved')
+        .doc(postId)
+        .snapshots()
+        .map((d) => d.exists);
+  }
+
+  /// Saved post IDs, newest first.
+  Stream<List<String>> savedIdsStream(String uid) {
+    return _users
+        .doc(uid)
+        .collection('saved')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((s) => s.docs.map((d) => d.id).toList());
+  }
+
+  // Records that [viewerId] has seen a story (one document per viewer).
+  Future<void> markStoryViewed(String storyId, String viewerId) async {
+    final ref = _db
+        .collection('stories')
+        .doc(storyId)
+        .collection('views')
+        .doc(viewerId);
+    try {
+      final snap = await ref.get();
+      if (snap.exists) return;
+      await ref.set({
+        'viewerId': viewerId,
+        'viewedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {}
+  }
+
+  // Live list of viewers of a story, newest first.
+  // Each item: {'uid': String, 'viewedAt': DateTime?}
+  Stream<List<Map<String, dynamic>>> storyViewsStream(String storyId) {
+    return _db
+        .collection('stories')
+        .doc(storyId)
+        .collection('views')
+        .orderBy('viewedAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) {
+              final ts = d.data()['viewedAt'];
+              return <String, dynamic>{
+                'uid': d.id,
+                'viewedAt': ts is Timestamp ? ts.toDate() : null,
+              };
+            }).toList());
   }
 }
 

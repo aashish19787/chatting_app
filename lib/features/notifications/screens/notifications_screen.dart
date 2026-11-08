@@ -1,3 +1,5 @@
+import '../../home/screens/follow_requests_screen.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../../common/widgets/user_avatar.dart';
@@ -148,6 +150,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          StreamBuilder<List<String>>(
+            stream: _firestoreService.requestsStream(_myUid),
+            builder: (context, snapshot) {
+              final count = snapshot.data?.length ?? 0;
+              return IconButton(
+                tooltip: 'Follow requests',
+                icon: Badge(
+                  isLabelVisible: count > 0,
+                  label: Text('$count'),
+                  child: const Icon(Icons.person_add_alt_1_outlined),
+                ),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => const FollowRequestsScreen(),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
         title: const Text(
           'Notifications',
           style: TextStyle(fontWeight: FontWeight.bold),

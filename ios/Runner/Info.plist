@@ -68,5 +68,7 @@
     </array>
     <key>NSPhotoLibraryUsageDescription</key>
     <string>We need access to your photos to set your profile picture and send images.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>We need the microphone to record voice messages.</string>
 </dict>
 </plist>

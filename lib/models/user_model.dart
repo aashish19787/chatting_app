@@ -7,6 +7,7 @@ class UserModel {
   final String photoUrl;
   final String photoBase64;
   final String bio;
+  final bool isPrivate;
   final String note;
   final DateTime? noteAt;
   final DateTime createdAt;
@@ -21,6 +22,7 @@ class UserModel {
     required this.createdAt,
     this.photoBase64 = '',
     this.bio = '',
+    this.isPrivate = false,
     this.note = '',
     this.noteAt,
     this.isOnline = false,
@@ -47,6 +49,7 @@ class UserModel {
       photoUrl: photoUrl ?? this.photoUrl,
       photoBase64: photoBase64 ?? this.photoBase64,
       bio: bio ?? this.bio,
+      isPrivate: isPrivate,
       note: note ?? this.note,
       noteAt: noteAt ?? this.noteAt,
       createdAt: createdAt ?? this.createdAt,
@@ -76,6 +79,7 @@ class UserModel {
       'photoUrl': photoUrl,
       'photoBase64': photoBase64,
       'bio': bio,
+      'isPrivate': isPrivate,
       'note': note,
       'noteAt': noteAt == null ? null : Timestamp.fromDate(noteAt!),
       'createdAt': Timestamp.fromDate(createdAt),
@@ -94,6 +98,7 @@ class UserModel {
       photoUrl: map['photoUrl'] ?? '',
       photoBase64: map['photoBase64'] ?? '',
       bio: map['bio'] ?? '',
+      isPrivate: map['isPrivate'] ?? false,
       note: map['note'] ?? '',
       noteAt: (map['noteAt'] as Timestamp?)?.toDate(),
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),

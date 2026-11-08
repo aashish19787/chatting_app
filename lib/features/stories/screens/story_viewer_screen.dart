@@ -23,9 +23,12 @@ class StoryViewerScreen extends StatefulWidget {
 class _StoryViewerScreenState extends State<StoryViewerScreen>
     with SingleTickerProviderStateMixin {
   final _service = FirestoreService();
+  final _replyController = TextEditingController();
+  final _focus = FocusNode();
   late final AnimationController _controller;
   late List<StoryModel> _stories;
   int _index = 0;
+  bool _sending = false;
 
   @override
   void initState() {
@@ -37,11 +40,22 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
             if (s == AnimationStatus.completed) _go(_index + 1);
           })
           ..forward();
+
+    // Pause the story while typing.
+    _focus.addListener(() {
+      if (_focus.hasFocus) {
+        _controller.stop();
+      } else if (!_sending) {
+        _controller.forward();
+      }
+    });
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _replyController.dispose();
+    _focus.dispose();
     super.dispose();
   }
 
@@ -64,6 +78,51 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     if (diff.inMinutes < 1) return 'now';
     if (diff.inMinutes < 60) return '${diff.inMinutes}m';
     return '${diff.inHours}h';
+  }
+
+  void _msg(String text, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(text),
+        backgroundColor: error ? Colors.redAccent : Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _sendToAuthor(String text) async {
+    final story = _stories[_index];
+    if (text.trim().isEmpty || _sending) return;
+
+    setState(() => _sending = true);
+    _controller.stop();
+    try {
+      await _service.sendMessage(
+        senderId: widget.myUid,
+        receiverId: story.authorId,
+        text: text.trim(),
+        replyToId: 'story_${story.id}',
+        replyToText: '📸 Story',
+        replyToSenderId: story.authorId,
+      );
+      _replyController.clear();
+      _focus.unfocus();
+      if (!mounted) return;
+      _msg('Sent');
+    } catch (e) {
+      if (!mounted) return;
+      _msg(
+        e is BlockedException
+            ? "You can't message this person."
+            : 'Could not send. Please try again.',
+        error: true,
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _sending = false);
+        if (!_focus.hasFocus) _controller.forward();
+      }
+    }
   }
 
   Future<void> _delete() async {
@@ -96,12 +155,7 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
       await _service.deleteStory(_stories[_index].id);
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not delete the story.'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _msg('Could not delete the story.', error: true);
       _controller.forward();
       return;
     }
@@ -118,6 +172,65 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     _controller.forward(from: 0);
   }
 
+  Widget _replyBar() {
+    const emojis = ['❤️', '😂', '😮', '😢', '👍'];
+
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 10),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              for (final e in emojis)
+                InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: _sending ? null : () => _sendToAuthor(e),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text(e, style: const TextStyle(fontSize: 26)),
+                  ),
+                ),
+            ],
+          ),
+          TextField(
+            controller: _replyController,
+            focusNode: _focus,
+            maxLength: 300,
+            style: const TextStyle(color: Colors.white),
+            textCapitalization: TextCapitalization.sentences,
+            onSubmitted: _sendToAuthor,
+            decoration: InputDecoration(
+              hintText: 'Reply to story...',
+              hintStyle: const TextStyle(color: Colors.white54),
+              counterText: '',
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 10,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: const BorderSide(color: Colors.white54),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: const BorderSide(color: Colors.white),
+              ),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.send_rounded, color: Colors.white),
+                onPressed: _sending
+                    ? null
+                    : () => _sendToAuthor(_replyController.text),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final story = _stories[_index];
@@ -126,112 +239,129 @@ class _StoryViewerScreenState extends State<StoryViewerScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
-        child: Stack(
+        child: Column(
           children: [
-            Positioned.fill(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTapUp: (d) {
-                  final w = MediaQuery.of(context).size.width;
-                  _go(d.localPosition.dx < w / 3 ? _index - 1 : _index + 1);
-                },
-                child: Center(
-                  child: Image.network(
-                    story.imageUrl,
-                    fit: BoxFit.contain,
-                    loadingBuilder: (context, child, progress) {
-                      if (progress == null) return child;
-                      return const CircularProgressIndicator(
-                        color: Colors.white,
-                      );
-                    },
-                    errorBuilder: (_, _, _) => const Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.white54,
-                      size: 48,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 8,
-              left: 8,
-              right: 8,
-              child: Column(
+            Expanded(
+              child: Stack(
                 children: [
-                  Row(
-                    children: [
-                      for (var i = 0; i < _stories.length; i++)
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 2),
-                            child: AnimatedBuilder(
-                              animation: _controller,
-                              builder: (_, _) => LinearProgressIndicator(
-                                value: i < _index
-                                    ? 1
-                                    : (i == _index ? _controller.value : 0),
-                                minHeight: 3,
-                                backgroundColor: Colors.white24,
-                                valueColor: const AlwaysStoppedAnimation(
-                                  Colors.white,
-                                ),
-                              ),
-                            ),
+                  Positioned.fill(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: (d) {
+                        if (_focus.hasFocus) {
+                          _focus.unfocus();
+                          return;
+                        }
+                        final w = MediaQuery.of(context).size.width;
+                        _go(
+                          d.localPosition.dx < w / 3 ? _index - 1 : _index + 1,
+                        );
+                      },
+                      child: Center(
+                        child: Image.network(
+                          story.imageUrl,
+                          fit: BoxFit.contain,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return const CircularProgressIndicator(
+                              color: Colors.white,
+                            );
+                          },
+                          errorBuilder: (_, _, _) => const Icon(
+                            Icons.broken_image_outlined,
+                            color: Colors.white54,
+                            size: 48,
                           ),
                         ),
-                    ],
+                      ),
+                    ),
                   ),
-                  const SizedBox(height: 8),
-                  StreamBuilder<UserModel?>(
-                    stream: _service.userStream(story.authorId),
-                    builder: (context, snapshot) {
-                      final user = snapshot.data;
-                      final name = user?.name ?? '';
-                      return Row(
-                        children: [
-                          UserAvatar(
-                            name: name,
-                            photoBase64: user?.photoBase64 ?? '',
-                            size: 36,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _ago(story.createdAt),
-                            style: const TextStyle(color: Colors.white70),
-                          ),
-                          const Spacer(),
-                          if (mine)
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete_outline_rounded,
-                                color: Colors.white,
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    right: 8,
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            for (var i = 0; i < _stories.length; i++)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 2,
+                                  ),
+                                  child: AnimatedBuilder(
+                                    animation: _controller,
+                                    builder: (_, _) => LinearProgressIndicator(
+                                      value: i < _index
+                                          ? 1
+                                          : (i == _index
+                                                ? _controller.value
+                                                : 0),
+                                      minHeight: 3,
+                                      backgroundColor: Colors.white24,
+                                      valueColor: const AlwaysStoppedAnimation(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                              onPressed: _delete,
-                            ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => Navigator.of(context).pop(),
-                          ),
-                        ],
-                      );
-                    },
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        StreamBuilder<UserModel?>(
+                          stream: _service.userStream(story.authorId),
+                          builder: (context, snapshot) {
+                            final user = snapshot.data;
+                            final name = user?.name ?? '';
+                            return Row(
+                              children: [
+                                UserAvatar(
+                                  name: name,
+                                  photoBase64: user?.photoBase64 ?? '',
+                                  size: 36,
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  _ago(story.createdAt),
+                                  style: const TextStyle(color: Colors.white70),
+                                ),
+                                const Spacer(),
+                                if (mine)
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: Colors.white,
+                                    ),
+                                    onPressed: _delete,
+                                  ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.close_rounded,
+                                    color: Colors.white,
+                                  ),
+                                  onPressed: () => Navigator.of(context).pop(),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
+            if (!mine) _replyBar(),
           ],
         ),
       ),
